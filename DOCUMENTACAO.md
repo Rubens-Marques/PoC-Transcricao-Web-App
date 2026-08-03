@@ -1,8 +1,8 @@
 # Documentação Técnica
 
-> Versão em português de [DOCUMENTATION.md](DOCUMENTATION.md). As duas são
-> equivalentes; identificadores de código, nomes de arquivo e termos técnicos
-> consagrados permanecem em inglês.
+> Também disponível em inglês: [DOCUMENTATION.en.md](DOCUMENTATION.en.md). As
+> duas versões são equivalentes; identificadores de código, nomes de arquivo e
+> termos técnicos consagrados permanecem em inglês nas duas.
 
 Duas partes:
 

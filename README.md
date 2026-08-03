@@ -14,14 +14,14 @@ Voz → Texto → LLM → Dados Estruturados → Busca no Banco → Recomendaç�
 - **Voz para texto** acontece no browser, via Web Speech API. Nenhum áudio chega
   a este backend. (Vale notar que a implementação do Chrome ainda envia o áudio
   para os servidores de reconhecimento do próprio Google — ver
-  [DOCUMENTACAO.pt-BR.md](DOCUMENTACAO.pt-BR.md) §6.1.)
+  [DOCUMENTACAO.md](DOCUMENTACAO.md) §6.1.)
 - **O LLM** é usado estritamente como parser: entra uma frase, sai um objeto
   JSON. Ele nunca conversa.
 - **A busca** é pontuação determinística por pesos sobre uma tabela SQLite. Sem
   aprendizado, sem embeddings.
 
-> **[DOCUMENTACAO.pt-BR.md](DOCUMENTACAO.pt-BR.md)** (também em inglês:
-> **[DOCUMENTATION.md](DOCUMENTATION.md)**) — o registro completo de decisões de
+> **[DOCUMENTACAO.md](DOCUMENTACAO.md)** (também em inglês:
+> **[DOCUMENTATION.en.md](DOCUMENTATION.en.md)**) — o registro completo de decisões de
 > cada camada (o que foi escolhido, por quê, e o que foi descartado), mais um
 > estudo de projeto para uma versão 2 que substitui os dois modelos de IA por
 > modelos locais: Whisper para transcrição e um LLM instruct pequeno para
@@ -210,7 +210,8 @@ punhado de palavras-chave, não linguagem.
 ```
 
 Os valores dentro do JSON são tokens canônicos em inglês, independentemente do
-idioma falado — é o schema que define isso, e a UI traduz na exibição.
+idioma falado — é o schema que define isso. A UI apenas os enfeita com emoji
+(`beach` → `🏖️ Beach`); ela ainda não traduz os rótulos para português.
 
 `score` e `match_reasons` são acréscimos ao formato mínimo do spec. Eles tornam o
 ranking auditável, que é boa parte do propósito de uma demonstração de PoC.

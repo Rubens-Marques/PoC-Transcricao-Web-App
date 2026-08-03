@@ -13,15 +13,15 @@ Voice → Text → LLM → Structured Data → Database Search → Recommendatio
 
 - **Speech to text** happens in the browser via the Web Speech API. No audio
   reaches this backend. (Note that Chrome's implementation still sends the audio
-  to Google's own recognition servers — see [DOCUMENTATION.md](DOCUMENTATION.md)
+  to Google's own recognition servers — see [DOCUMENTATION.en.md](DOCUMENTATION.en.md)
   §6.1.)
 - **The LLM** is used strictly as a parser: one sentence in, one JSON object out.
   It never holds a conversation.
 - **The search** is deterministic weighted scoring over a SQLite table. No
   learning, no embeddings.
 
-> **[DOCUMENTATION.md](DOCUMENTATION.md)** (also in Portuguese:
-> **[DOCUMENTACAO.pt-BR.md](DOCUMENTACAO.pt-BR.md)**) — the full decision record
+> **[DOCUMENTATION.en.md](DOCUMENTATION.en.md)** (also in Portuguese:
+> **[DOCUMENTACAO.md](DOCUMENTACAO.md)**) — the full decision record
 > for every layer (what was chosen, why, and what was rejected), plus a design
 > study for a version 2 that replaces both AI models with local ones: Whisper for
 > transcription and a small instruct LLM for extraction.

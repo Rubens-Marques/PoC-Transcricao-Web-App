@@ -1,6 +1,7 @@
 # Technical Documentation
 
-> Também disponível em português: [DOCUMENTACAO.pt-BR.md](DOCUMENTACAO.pt-BR.md).
+> English translation of [DOCUMENTACAO.md](DOCUMENTACAO.md), which is the
+> primary version. The two are equivalent.
 
 Two parts:
 
