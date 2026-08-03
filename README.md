@@ -1,39 +1,42 @@
-# AI Voice Travel Recommendation — PoC (Version 1)
+# Recomendação de Viagens por Voz com IA — PoC (Versão 1)
 
-Speak about the trip you want; get matching travel packages back.
+> Read this in [English](README.en.md).
 
-This is a proof of concept, not a production application. It exists to show that
-one chain works end to end:
+Fale sobre a viagem que você quer; receba de volta os pacotes que combinam.
+
+Isto é uma prova de conceito, não uma aplicação de produção. Existe para mostrar
+que uma cadeia funciona de ponta a ponta:
 
 ```
-Voice → Text → LLM → Structured Data → Database Search → Recommendation
+Voz → Texto → LLM → Dados Estruturados → Busca no Banco → Recomendação
 ```
 
-- **Speech to text** happens in the browser via the Web Speech API. No audio
-  reaches this backend. (Note that Chrome's implementation still sends the audio
-  to Google's own recognition servers — see [DOCUMENTATION.md](DOCUMENTATION.md)
-  §6.1.)
-- **The LLM** is used strictly as a parser: one sentence in, one JSON object out.
-  It never holds a conversation.
-- **The search** is deterministic weighted scoring over a SQLite table. No
-  learning, no embeddings.
+- **Voz para texto** acontece no browser, via Web Speech API. Nenhum áudio chega
+  a este backend. (Vale notar que a implementação do Chrome ainda envia o áudio
+  para os servidores de reconhecimento do próprio Google — ver
+  [DOCUMENTACAO.pt-BR.md](DOCUMENTACAO.pt-BR.md) §6.1.)
+- **O LLM** é usado estritamente como parser: entra uma frase, sai um objeto
+  JSON. Ele nunca conversa.
+- **A busca** é pontuação determinística por pesos sobre uma tabela SQLite. Sem
+  aprendizado, sem embeddings.
 
-> **[DOCUMENTATION.md](DOCUMENTATION.md)** (also in Portuguese:
-> **[DOCUMENTACAO.pt-BR.md](DOCUMENTACAO.pt-BR.md)**) — the full decision record
-> for every layer (what was chosen, why, and what was rejected), plus a design
-> study for a version 2 that replaces both AI models with local ones: Whisper for
-> transcription and a small instruct LLM for extraction.
+> **[DOCUMENTACAO.pt-BR.md](DOCUMENTACAO.pt-BR.md)** (também em inglês:
+> **[DOCUMENTATION.md](DOCUMENTATION.md)**) — o registro completo de decisões de
+> cada camada (o que foi escolhido, por quê, e o que foi descartado), mais um
+> estudo de projeto para uma versão 2 que substitui os dois modelos de IA por
+> modelos locais: Whisper para transcrição e um LLM instruct pequeno para
+> extração.
 
 ---
 
-## Architecture
+## Arquitetura
 
 ```
 ┌──────────────────────── Browser ─────────────────────────┐
-│  Microphone                                              │
+│  Microfone                                               │
 │      │                                                   │
 │      ▼                                                   │
-│  Web Speech API  ──►  transcript text                    │
+│  Web Speech API  ──►  texto transcrito                   │
 │                            │                             │
 │  Next.js + React + TypeScript + Tailwind                 │
 └────────────────────────────┼─────────────────────────────┘
@@ -43,29 +46,29 @@ Voice → Text → LLM → Structured Data → Database Search → Recommendatio
 │  routes/recommendations.py                               │
 │      │                                                   │
 │      ├─► services/llm_service.py ──► Anthropic Messages  │
-│      │      (structured output)      API (external)      │
+│      │      (structured output)      API (externa)       │
 │      │            │                                      │
 │      │            ▼  TravelPreferences (JSON)            │
 │      │                                                   │
 │      └─► services/search_service.py ──► SQLite           │
 │                     │                   travel_packages  │
 │                     ▼                                    │
-│            ranked recommendations                        │
+│           recomendações ranqueadas                       │
 └──────────────────────────────────────────────────────────┘
 ```
 
 ### Stack
 
-| Layer    | Choice                                                         |
-| -------- | -------------------------------------------------------------- |
-| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4 |
-| Backend  | FastAPI, Pydantic v2                                           |
-| Database | SQLite                                                         |
-| AI       | External API only (Anthropic Messages API). No local models.   |
+| Camada   | Escolha                                                          |
+| -------- | ---------------------------------------------------------------- |
+| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4   |
+| Backend  | FastAPI, Pydantic v2                                             |
+| Banco    | SQLite                                                           |
+| IA       | Apenas API externa (Anthropic Messages API). Sem modelos locais. |
 
 ---
 
-## Project structure
+## Estrutura do projeto
 
 ```
 POC/
@@ -77,26 +80,26 @@ POC/
 │   │   └── recommendations.py      # POST /api/recommendations
 │   ├── services/
 │   │   ├── llm_service.py          # extract_travel_preferences(text)
-│   │   └── search_service.py       # deterministic scoring
+│   │   └── search_service.py       # pontuação determinística
 │   ├── models/
-│   │   └── travel.py               # Pydantic contracts
+│   │   └── travel.py               # contratos Pydantic
 │   ├── database/
-│   │   ├── db.py                   # connection + schema
-│   │   └── seed.py                 # 12 demo packages
+│   │   ├── db.py                   # conexão + schema
+│   │   └── seed.py                 # 12 pacotes de demonstração
 │   └── tests/                      # pytest
 └── frontend/
     ├── app/                        # layout.tsx, page.tsx, globals.css
     ├── components/                 # VoiceRecorder, ResultsList, PackageCard, …
     ├── hooks/                      # useSpeechRecognition
     ├── services/                   # api.ts
-    └── types/                      # travel.ts (mirrors the Pydantic models)
+    └── types/                      # travel.ts (espelha os modelos Pydantic)
 ```
 
 ---
 
 ## Setup
 
-Prerequisites: **Python 3.11+** and **Node.js 20+**.
+Pré-requisitos: **Python 3.11+** e **Node.js 20+**.
 
 ### 1. Backend
 
@@ -106,18 +109,18 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-cp .env.example .env      # then edit it — see "Environment" below
-python -m database.seed   # creates data/travel.db with 12 packages
+cp .env.example .env      # depois edite — ver "Variáveis de ambiente" abaixo
+python -m database.seed   # cria data/travel.db com 12 pacotes
 
 uvicorn main:app --reload
 ```
 
-The API listens on <http://localhost:8000>. Interactive docs at
+A API escuta em <http://localhost:8000>. Documentação interativa em
 <http://localhost:8000/docs>.
 
 ### 2. Frontend
 
-In a second terminal:
+Em um segundo terminal:
 
 ```bash
 cd frontend
@@ -126,36 +129,36 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
-Open <http://localhost:3000>.
+Abra <http://localhost:3000>.
 
 ---
 
-## Environment
+## Variáveis de ambiente
 
-Secrets are never hardcoded. Both `.env` files are gitignored; only the
-`.example` templates are committed.
+Nenhum secret fica no código. Os dois arquivos `.env` estão no gitignore; apenas
+os templates `.example` são commitados.
 
 ### `backend/.env`
 
-| Variable        | Required | Default                  | Notes                                      |
-| --------------- | -------- | ------------------------ | ------------------------------------------ |
-| `LLM_PROVIDER`  | no       | `anthropic`              | `anthropic` or `mock`                      |
-| `LLM_API_KEY`   | yes¹     | —                        | Provider API key                           |
-| `LLM_MODEL`     | no       | `claude-opus-5`          | Any model that supports structured outputs |
-| `CORS_ORIGINS`  | no       | `http://localhost:3000`  | Comma-separated                            |
-| `DATABASE_PATH` | no       | `backend/data/travel.db` |                                            |
-| `LOG_LEVEL`     | no       | `INFO`                   |                                            |
+| Variável        | Obrigatória | Padrão                   | Observações                                      |
+| --------------- | ----------- | ------------------------ | ------------------------------------------------ |
+| `LLM_PROVIDER`  | não         | `anthropic`              | `anthropic` ou `mock`                            |
+| `LLM_API_KEY`   | sim¹        | —                        | Chave de API do provider                         |
+| `LLM_MODEL`     | não         | `claude-opus-5`          | Qualquer modelo com suporte a structured outputs |
+| `CORS_ORIGINS`  | não         | `http://localhost:3000`  | Separadas por vírgula                            |
+| `DATABASE_PATH` | não         | `backend/data/travel.db` |                                                  |
+| `LOG_LEVEL`     | não         | `INFO`                   |                                                  |
 
-¹ Required only when `LLM_PROVIDER=anthropic`.
+¹ Obrigatória apenas quando `LLM_PROVIDER=anthropic`.
 
-**`LLM_PROVIDER=mock`** swaps the API call for local keyword matching (PT and
-EN). It exists so the whole chain can be demoed — and tested in CI — without a
-key. It is a demo aid, not a fallback: it understands a handful of keywords, not
-language.
+**`LLM_PROVIDER=mock`** troca a chamada de API por casamento de palavras-chave
+local (PT e EN). Existe para que a cadeia inteira possa ser demonstrada — e
+testada em CI — sem uma chave. É apoio de demonstração, não fallback: entende um
+punhado de palavras-chave, não linguagem.
 
 ### `frontend/.env.local`
 
-| Variable                   | Default                 |
+| Variável                   | Padrão                  |
 | -------------------------- | ----------------------- |
 | `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:8000` |
 
@@ -165,17 +168,17 @@ language.
 
 ### `POST /api/recommendations`
 
-**Request**
+**Requisição**
 
 ```json
-{ "text": "I want a beach trip in December" }
+{ "text": "Quero uma viagem de praia em dezembro" }
 ```
 
-| Field  | Type   | Constraints       |
-| ------ | ------ | ----------------- |
-| `text` | string | 1–1000 characters |
+| Campo  | Tipo   | Restrições          |
+| ------ | ------ | ------------------- |
+| `text` | string | 1 a 1000 caracteres |
 
-**Response `200`**
+**Resposta `200`**
 
 ```json
 {
@@ -206,16 +209,19 @@ language.
 }
 ```
 
-`score` and `match_reasons` are additions to the minimal spec response. They make
-the ranking auditable, which is most of the point of a PoC demo.
+Os valores dentro do JSON são tokens canônicos em inglês, independentemente do
+idioma falado — é o schema que define isso, e a UI traduz na exibição.
 
-**Errors**
+`score` e `match_reasons` são acréscimos ao formato mínimo do spec. Eles tornam o
+ranking auditável, que é boa parte do propósito de uma demonstração de PoC.
 
-| Status | When                                                              |
-| ------ | ----------------------------------------------------------------- |
-| `422`  | `text` missing, empty, or over 1000 characters                    |
-| `502`  | The LLM answered but the answer was unusable (or it refused)      |
-| `503`  | The LLM provider is misconfigured — e.g. `LLM_API_KEY` is not set |
+**Erros**
+
+| Status | Quando                                                                 |
+| ------ | ---------------------------------------------------------------------- |
+| `422`  | `text` ausente, vazio ou acima de 1000 caracteres                      |
+| `502`  | O LLM respondeu mas a resposta era inutilizável (ou ele recusou)       |
+| `503`  | O provider de LLM está mal configurado — ex.: `LLM_API_KEY` não setada |
 
 ### `GET /health`
 
@@ -225,15 +231,15 @@ the ranking auditable, which is most of the point of a PoC demo.
 
 ---
 
-## How extraction works
+## Como funciona a extração
 
-`extract_travel_preferences(text)` sends the sentence to the Messages API with a
-JSON Schema attached via `output_config.format`. Schema conformance is enforced
-server-side, so the response is always valid JSON in the expected shape — there
-is no repair prompting and no `try: json.loads()` guesswork.
+`extract_travel_preferences(text)` envia a frase para a Messages API com um JSON
+Schema anexado via `output_config.format`. A conformidade com o schema é garantida
+server-side, então a resposta é sempre JSON válido no formato esperado — não há
+prompt de reparo nem adivinhação com `try: json.loads()`.
 
-The model is told to accept Portuguese or English input and always emit the
-canonical English tokens the schema defines.
+O modelo é instruído a aceitar entrada em português ou inglês e sempre emitir os
+tokens canônicos em inglês que o schema define.
 
 ```json
 {
@@ -246,38 +252,39 @@ canonical English tokens the schema defines.
 }
 ```
 
-Every field is nullable. A field is filled only when the speaker actually said
-it — the model is instructed not to guess.
+Todo campo é nullable. Um campo só é preenchido quando o falante realmente disse
+aquilo — o modelo é instruído a não adivinhar.
 
 ---
 
-## How search works
+## Como funciona a busca
 
-Each package is scored against the extracted preferences, highest first, ties
-broken by the lower price. Weights encode the priority order from the spec:
+Cada pacote é pontuado contra as preferências extraídas, do maior para o menor,
+com empates desfeitos pelo menor preço. Os pesos codificam a ordem de prioridade
+do spec:
 
-| Signal                                | Weight |
-| ------------------------------------- | -----: |
-| Destination named by the user         |    200 |
-| Category matches                      |    100 |
-| Month is in the package's best season |     50 |
-| Price fits the budget                 |     25 |
-| Group fits the package capacity       |     10 |
+| Sinal                                  | Peso |
+| -------------------------------------- | ---: |
+| Destino nomeado pelo usuário           |  200 |
+| Categoria casa                         |  100 |
+| Mês está na melhor temporada do pacote |   50 |
+| Preço cabe no orçamento                |   25 |
+| Grupo cabe na capacidade do pacote     |   10 |
 
-Destination sits deliberately above the sum of everything else: if someone names
-a place, that beats a package matching all the soft criteria somewhere else.
+O destino fica deliberadamente acima da soma de todo o resto: se alguém nomeia um
+lugar, isso vence um pacote que casa com todos os critérios moles em outro lugar.
 
-Budget ceilings when no explicit amount is given: `low` ≤ R$ 3.000,
-`medium` ≤ R$ 6.000, `high` unbounded. An explicit `max_budget` always wins over
-the level.
+Tetos de orçamento quando nenhum valor explícito é dado: `low` ≤ R$ 3.000,
+`medium` ≤ R$ 6.000, `high` sem limite. Um `max_budget` explícito sempre vence o
+nível.
 
-Packages scoring 0 are dropped when at least one preference was extracted. When
-nothing at all was understood, the cheapest packages are returned instead of an
-empty list.
+Pacotes com pontuação 0 são descartados quando ao menos uma preferência foi
+extraída. Quando nada foi entendido, os pacotes mais baratos são devolvidos em vez
+de uma lista vazia.
 
 ---
 
-## Tests
+## Testes
 
 ```bash
 cd backend
@@ -285,12 +292,12 @@ source .venv/bin/activate
 pytest
 ```
 
-23 tests covering the scoring rules, the extraction contract, and the HTTP
-endpoint. The suite runs offline: `tests/conftest.py` forces `LLM_PROVIDER=mock`
-and points the database at a temp directory, so no API key is needed and the
-seeded `data/travel.db` is never touched.
+23 testes cobrindo as regras de pontuação, o contrato de extração e o endpoint
+HTTP. A suíte roda offline: `tests/conftest.py` força `LLM_PROVIDER=mock` e aponta
+o banco para um diretório temporário, então nenhuma chave de API é necessária e o
+`data/travel.db` populado nunca é tocado.
 
-Frontend type checking:
+Verificação de tipos do frontend:
 
 ```bash
 cd frontend
@@ -299,39 +306,41 @@ npm run typecheck
 
 ---
 
-## Browser support
+## Suporte dos browsers
 
-The Web Speech API is not evenly supported.
+O suporte à Web Speech API não é uniforme.
 
-| Browser      | Speech input                    |
-| ------------ | ------------------------------- |
-| Chrome, Edge | Works                           |
-| Safari       | Partial, behind `webkit` prefix |
-| Firefox      | Not supported                   |
+| Browser      | Entrada por voz                    |
+| ------------ | ---------------------------------- |
+| Chrome, Edge | Funciona                           |
+| Safari       | Parcial, atrás do prefixo `webkit` |
+| Firefox      | Sem suporte                        |
 
-The UI detects support and says so. The transcription box is always editable, so
-the rest of the chain can be demonstrated by typing when the microphone is
-unavailable.
+A UI detecta o suporte e avisa. A caixa de transcrição é sempre editável, então o
+resto da cadeia pode ser demonstrado digitando quando o microfone não está
+disponível.
 
-Speech recognition also requires a secure context: `localhost` or HTTPS.
+O reconhecimento de fala também exige contexto seguro: `localhost` ou HTTPS.
 
 ---
 
-## Known limitations
+## Limitações conhecidas
 
-Deliberate, for a version 1:
+Deliberadas, para uma versão 1:
 
-- No authentication, no payments, no booking.
-- The catalogue is 12 fixed rows loaded by a seed script.
-- SQLite queries run synchronously inside async routes. The dataset is a dozen
-  local rows, so the blocking window is negligible; the upgrade path is marked
-  with a `ponytail:` comment in `backend/database/db.py`.
-- `npm audit` reports 3 high-severity advisories in `postcss` and `sharp`, both
-  transitive dependencies bundled inside Next.js 16.2.12. `npm audit fix --force`
-  "resolves" them by downgrading to Next.js 9 — do not run it. They are
-  build-toolchain issues with no runtime exposure for a local PoC; they clear
-  when Next ships an updated bundle.
+- Sem autenticação, sem pagamentos, sem reserva.
+- O catálogo são 12 linhas fixas carregadas por um script de seed.
+- As queries SQLite rodam de forma síncrona dentro de rotas async. O conjunto de
+  dados são uma dúzia de linhas locais, então a janela de bloqueio é desprezível;
+  o caminho de evolução está marcado com um comentário `ponytail:` em
+  `backend/database/db.py`.
+- O `npm audit` reporta 3 vulnerabilidades de severidade alta em `postcss` e
+  `sharp`, ambas dependências transitivas embutidas no Next.js 16.2.12. O
+  `npm audit fix --force` "resolve" rebaixando para o Next.js 9 — não rode. São
+  problemas de toolchain de build, sem exposição em runtime para uma PoC local;
+  somem quando o Next publicar um bundle atualizado.
 
-Explicitly out of scope, per the spec: local AI models (Whisper, Ollama, Qwen,
-Llama), mobile apps, and Electron. A future version may replace the browser
-Speech API with local Whisper + WebGPU — this version stays simple on purpose.
+Explicitamente fora de escopo, conforme o spec: modelos de IA locais (Whisper,
+Ollama, Qwen, Llama), apps mobile e Electron. Uma versão futura pode substituir a
+Speech API do browser por Whisper local + WebGPU — esta versão fica simples de
+propósito.
