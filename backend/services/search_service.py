@@ -16,9 +16,13 @@ import unicodedata
 
 from models.travel import Recommendation, TravelPackage, TravelPreferences
 
-# Deliberately above the sum of every other weight: a named place beats a
-# package that matches all the soft criteria but is somewhere else.
-DESTINATION_WEIGHT = 200
+# Deliberately above the sum of every other weight (305): naming a city beats a
+# package that matches all the soft criteria but sits somewhere else. A test
+# asserts this invariant, so raising any weight below means raising this one.
+DESTINATION_WEIGHT = 400
+# Below destination — a city is more specific than the country containing it —
+# but above category: "Italy" is a firmer preference than "beach".
+COUNTRY_WEIGHT = 120
 CATEGORY_WEIGHT = 100
 MONTH_WEIGHT = 50
 BUDGET_WEIGHT = 25
@@ -64,11 +68,15 @@ def score_package(
     score = 0
     reasons: list[str] = []
 
-    if preferences.destination and _destination_matches(
+    if preferences.destination and _place_matches(
         preferences.destination, package.destination
     ):
         score += DESTINATION_WEIGHT
         reasons.append(f"Destination matches {package.destination}")
+
+    if preferences.country and _place_matches(preferences.country, package.country):
+        score += COUNTRY_WEIGHT
+        reasons.append(f"Country matches {package.country}")
 
     if preferences.category and preferences.category == package.category:
         score += CATEGORY_WEIGHT
@@ -126,9 +134,10 @@ def _budget_ceiling(preferences: TravelPreferences) -> float | None:
     return None
 
 
-def _destination_matches(spoken: str, package_destination: str) -> bool:
+def _place_matches(spoken: str, package_place: str) -> bool:
+    """Compara nomes de lugar (cidade ou país) ignorando caixa e acentos."""
     spoken_key = _normalize(spoken)
-    package_key = _normalize(package_destination)
+    package_key = _normalize(package_place)
     if not spoken_key or not package_key:
         return False
     return spoken_key in package_key or package_key in spoken_key
@@ -144,6 +153,7 @@ def _has_any_criteria(preferences: TravelPreferences) -> bool:
         value is not None
         for value in (
             preferences.destination,
+            preferences.country,
             preferences.category,
             preferences.month,
             preferences.travelers,

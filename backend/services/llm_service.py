@@ -59,6 +59,12 @@ PREFERENCES_SCHEMA: dict[str, object] = {
         "destination": _nullable(
             {"type": "string", "description": "City or region named by the user."}
         ),
+        "country": _nullable(
+            {
+                "type": "string",
+                "description": "Country named by the user, in English.",
+            }
+        ),
         "category": _nullable({"type": "string", "enum": CATEGORIES}),
         "month": _nullable({"type": "string", "enum": MONTHS}),
         "travelers": _nullable(
@@ -74,6 +80,7 @@ PREFERENCES_SCHEMA: dict[str, object] = {
     },
     "required": [
         "destination",
+        "country",
         "category",
         "month",
         "travelers",
@@ -99,8 +106,13 @@ A stated number also implies a `budget_level`: under 3000 is low, 3000-6000 is \
 medium, above 6000 is high.
 - `budget_level` may also come from words alone: "cheap"/"barato" -> low, \
 "luxury"/"luxuoso" -> high.
-- `destination` is the place name only, without the country ("Gramado", not \
-"Gramado, Brazil")."""
+- `destination` and `country` are separate fields. Split what the speaker said \
+across them; never merge them into one.
+  - "Gramado" -> destination "Gramado", country null (they did not say the country)
+  - "Italy" -> country "Italy", destination null (they did not say a city)
+  - "Rome, Italy" -> destination "Rome", country "Italy"
+- `country` is always the English name: "Itália" -> "Italy", "Espanha" -> "Spain", \
+"Brasil" -> "Brazil"."""
 
 # A 3B model needs the rules spelled out where a frontier model infers them.
 # Every addition below fixes a failure observed on qwen2.5:3b with the base
@@ -116,6 +128,9 @@ OLLAMA_SYSTEM_PROMPT = (
 "Natal", "Patagonia"). A kind of place is NOT a destination: "praia", "beach",
 "montanha", "mountains", "campo" all mean destination is null — they only set
 `category`.
+- A COUNTRY never goes in `destination`. "Italy", "Japan", "Portugal" go in
+`country`, with `destination` null. Naming a country is a real preference —
+never drop it.
 - `travelers` is null unless the speaker mentions who is going. Never default to
 1. Use 1 only for an explicit "alone" / "sozinho".
 - When counting `travelers`, ALWAYS add the speaker to the people they name. Do
@@ -132,16 +147,24 @@ but the beach"), leave that field null. Never fill it with the rejected value.
 Worked examples:
 
 "Quero uma praia em dezembro com minha esposa, uns 5000 reais"
-{"destination":null,"category":"beach","month":"December","travelers":2,\
-"budget_level":"medium","max_budget":5000}
+{"destination":null,"country":null,"category":"beach","month":"December",\
+"travelers":2,"budget_level":"medium","max_budget":5000}
 
 "Quero conhecer Gramado no inverno"
-{"destination":"Gramado","category":"cold","month":"July","travelers":null,\
-"budget_level":null,"max_budget":null}
+{"destination":"Gramado","country":null,"category":"cold","month":"July",\
+"travelers":null,"budget_level":null,"max_budget":null}
+
+"I want to go to Italy with my wife"
+{"destination":null,"country":"Italy","category":null,"month":null,\
+"travelers":2,"budget_level":null,"max_budget":null}
+
+"quero passar uma semana em Roma, na Itália"
+{"destination":"Rome","country":"Italy","category":null,"month":null,\
+"travelers":null,"budget_level":null,"max_budget":null}
 
 "quero ir pra algum lugar"
-{"destination":null,"category":null,"month":null,"travelers":null,\
-"budget_level":null,"max_budget":null}
+{"destination":null,"country":null,"category":null,"month":null,\
+"travelers":null,"budget_level":null,"max_budget":null}
 
 Reply only with a JSON object matching the schema. No prose, no code fences."""
 )
@@ -287,6 +310,20 @@ _MONTH_KEYWORDS: dict[str, tuple[str, ...]] = {
 _LOW_BUDGET_WORDS = ("cheap", "barato", "economico", "budget")
 _HIGH_BUDGET_WORDS = ("luxury", "luxuoso", "premium", "sofisticado")
 
+# Só os países presentes no catálogo — o mock não pretende cobrir o mundo.
+_COUNTRY_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "Brazil": ("brazil", "brasil"),
+    "Italy": ("italy", "italia"),
+    "France": ("france", "franca"),
+    "Portugal": ("portugal",),
+    "Spain": ("spain", "espanha"),
+    "Japan": ("japan", "japao"),
+    "Argentina": ("argentina",),
+    "Chile": ("chile",),
+    "Peru": ("peru",),
+    "United States": ("united states", "estados unidos", "eua", "usa"),
+}
+
 
 def _extract_with_mock(text: str) -> TravelPreferences:
     haystack = _strip_accents(text).lower()
@@ -327,9 +364,19 @@ def _extract_with_mock(text: str) -> TravelPreferences:
     elif _contains(haystack, _HIGH_BUDGET_WORDS):
         budget_level = "high"
 
+    country = next(
+        (
+            name
+            for name, words in _COUNTRY_KEYWORDS.items()
+            if _contains(haystack, words)
+        ),
+        None,
+    )
+
     return TravelPreferences.model_validate(
         {
             "destination": None,
+            "country": country,
             "category": category,
             "month": month,
             "travelers": travelers,

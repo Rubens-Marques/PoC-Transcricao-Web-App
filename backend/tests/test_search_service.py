@@ -10,7 +10,16 @@ import pytest
 from database.db import init_schema
 from database.seed import seed
 from models.travel import TravelPackage, TravelPreferences
-from services.search_service import score_package, search_packages
+from services.search_service import (
+    BUDGET_WEIGHT,
+    CATEGORY_WEIGHT,
+    COUNTRY_WEIGHT,
+    DESTINATION_WEIGHT,
+    MONTH_WEIGHT,
+    TRAVELERS_WEIGHT,
+    score_package,
+    search_packages,
+)
 
 
 @pytest.fixture
@@ -68,16 +77,40 @@ def test_category_outweighs_month() -> None:
     assert category_score > month_score
 
 
+def test_weights_keep_destination_above_everything_else_combined() -> None:
+    # Arrange / Act
+    others = (
+        COUNTRY_WEIGHT
+        + CATEGORY_WEIGHT
+        + MONTH_WEIGHT
+        + BUDGET_WEIGHT
+        + TRAVELERS_WEIGHT
+    )
+
+    # Assert: this is the documented invariant. Raising any other weight
+    # without raising DESTINATION_WEIGHT breaks it, and this test says so.
+    assert DESTINATION_WEIGHT > others
+
+
 def test_named_destination_outranks_every_other_signal_combined() -> None:
-    # Arrange: the named place matches nothing else; the rival matches everything else.
+    # Arrange: the named city matches nothing else; the rival matches all the rest.
     named_place = make_package(
-        destination="Gramado", category="city", best_months=["March"], max_people=1
+        destination="Gramado",
+        country="Narnia",
+        category="city",
+        best_months=["March"],
+        max_people=1,
     )
     rival = make_package(
-        destination="Natal", category="cold", best_months=["December"], price=100.0
+        destination="Natal",
+        country="Brazil",
+        category="cold",
+        best_months=["December"],
+        price=100.0,
     )
     preferences = TravelPreferences(
         destination="Gramado",
+        country="Brazil",
         category="cold",
         month="December",
         travelers=2,
@@ -90,6 +123,51 @@ def test_named_destination_outranks_every_other_signal_combined() -> None:
 
     # Assert
     assert named_score > rival_score
+
+
+def test_country_alone_is_enough_to_match() -> None:
+    # Arrange: "I want to go to Italy" — no city, no category, nothing else.
+    italian = make_package(destination="Rome", country="Italy", category="culture")
+    brazilian = make_package(destination="Natal", country="Brazil", category="beach")
+    preferences = TravelPreferences(country="Italy")
+
+    # Act
+    italian_score, reasons = score_package(italian, preferences)
+    brazilian_score, _ = score_package(brazilian, preferences)
+
+    # Assert
+    assert italian_score == COUNTRY_WEIGHT
+    assert brazilian_score == 0
+    assert any("Italy" in reason for reason in reasons)
+
+
+def test_country_match_outranks_category_match() -> None:
+    # Arrange: naming a country is a firmer preference than naming a trip type.
+    right_country = make_package(country="Italy", category="city")
+    right_category = make_package(country="Brazil", category="beach")
+    preferences = TravelPreferences(country="Italy", category="beach")
+
+    # Act
+    country_score, _ = score_package(right_country, preferences)
+    category_score, _ = score_package(right_category, preferences)
+
+    # Assert
+    assert country_score > category_score
+
+
+def test_city_and_country_both_score_when_both_are_said() -> None:
+    # Arrange: "Rome, Italy" should beat a package that only matches the country.
+    rome = make_package(destination="Rome", country="Italy")
+    venice = make_package(destination="Venice", country="Italy")
+    preferences = TravelPreferences(destination="Rome", country="Italy")
+
+    # Act
+    rome_score, _ = score_package(rome, preferences)
+    venice_score, _ = score_package(venice, preferences)
+
+    # Assert
+    assert rome_score == DESTINATION_WEIGHT + COUNTRY_WEIGHT
+    assert venice_score == COUNTRY_WEIGHT
 
 
 def test_destination_match_ignores_case_and_accents() -> None:

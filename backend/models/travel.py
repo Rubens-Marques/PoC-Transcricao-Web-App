@@ -35,7 +35,11 @@ class TravelPreferences(BaseModel):
     """Structured output of the LLM layer. Every field is optional because a
     single spoken sentence rarely mentions all of them."""
 
+    # Separados de propósito: "quero ir para a Itália" dá país sem cidade, e
+    # "quero ir para Gramado" dá cidade sem o falante ter dito o país. Um campo
+    # só forçaria o modelo a escolher, e ele escolhia errado.
     destination: str | None = None
+    country: str | None = None
     category: TravelCategory | None = None
     month: Month | None = None
     travelers: int | None = None

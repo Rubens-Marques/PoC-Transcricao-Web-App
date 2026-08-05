@@ -18,6 +18,9 @@ export function PreferencesSummary({ preferences }: PreferencesSummaryProps) {
   if (preferences.destination) {
     entries.push(["Destination", preferences.destination]);
   }
+  if (preferences.country) {
+    entries.push(["Country", preferences.country]);
+  }
   if (preferences.category) {
     entries.push(["Category", preferences.category]);
   }

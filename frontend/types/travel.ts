@@ -21,6 +21,7 @@ export type Month =
 
 export interface TravelPreferences {
   destination: string | null;
+  country: string | null;
   category: TravelCategory | null;
   month: Month | null;
   travelers: number | null;
