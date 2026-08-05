@@ -49,15 +49,39 @@ def test_country_match_ignores_case_and_spacing() -> None:
     assert is_southern("Italy") is False
 
 
-def test_explicit_month_beats_season() -> None:
-    # Arrange: "julho, no verão" — o mês dito vence.
-    preferences = TravelPreferences(month="July", season="summer", country="Brazil")
+def test_month_consistent_with_the_season_is_preserved() -> None:
+    # Arrange: "julho, no verão" em Portugal — julho É verão no norte.
+    preferences = TravelPreferences(month="July", season="summer", country="Portugal")
+
+    # Act
+    resolved = resolve_season(preferences)
+
+    # Assert: o mês que o falante disse sobrevive.
+    assert resolved.month == "July"
+
+
+def test_month_inconsistent_with_the_season_is_overridden() -> None:
+    # Arrange: o caso real medido — o modelo devolve "verão" + June para o
+    # Brasil, onde June é inverno. O mês é inferência ruim dele, não fala do
+    # usuário.
+    preferences = TravelPreferences(month="June", season="summer", country="Brazil")
 
     # Act
     resolved = resolve_season(preferences)
 
     # Assert
-    assert resolved.month == "July"
+    assert resolved.month == "January"
+
+
+def test_edge_months_of_a_season_count_as_consistent() -> None:
+    # Arrange: dezembro é verão no sul, mesmo não sendo o mês central.
+    preferences = TravelPreferences(month="December", season="summer", country="Brazil")
+
+    # Act
+    resolved = resolve_season(preferences)
+
+    # Assert
+    assert resolved.month == "December"
 
 
 def test_season_fills_the_month_when_none_was_said() -> None:

@@ -39,19 +39,20 @@ NORTHERN_COUNTRIES: frozenset[str] = frozenset(
     }
 )
 
-# Mês central de cada estação, por hemisfério.
-_SOUTHERN: dict[Season, Month] = {
-    "summer": "January",
-    "autumn": "April",
-    "winter": "July",
-    "spring": "October",
+# Os três meses de cada estação, por hemisfério. O primeiro da tupla é o mês
+# central, usado quando é preciso escolher um.
+_SOUTHERN: dict[Season, tuple[Month, ...]] = {
+    "summer": ("January", "December", "February"),
+    "autumn": ("April", "March", "May"),
+    "winter": ("July", "June", "August"),
+    "spring": ("October", "September", "November"),
 }
 
-_NORTHERN: dict[Season, Month] = {
-    "summer": "July",
-    "autumn": "October",
-    "winter": "January",
-    "spring": "April",
+_NORTHERN: dict[Season, tuple[Month, ...]] = {
+    "summer": ("July", "June", "August"),
+    "autumn": ("October", "September", "November"),
+    "winter": ("January", "December", "February"),
+    "spring": ("April", "March", "May"),
 }
 
 
@@ -62,20 +63,33 @@ def is_southern(country: str | None) -> bool:
     return country.strip().casefold() not in NORTHERN_COUNTRIES
 
 
-def month_for_season(season: Season, country: str | None) -> Month:
+def months_in_season(season: Season, country: str | None) -> tuple[Month, ...]:
     table = _SOUTHERN if is_southern(country) else _NORTHERN
     return table[season]
 
 
-def resolve_season(preferences: TravelPreferences) -> TravelPreferences:
-    """Preenche `month` a partir de `season` quando o falante deu só a estação.
+def month_for_season(season: Season, country: str | None) -> Month:
+    """Mês central da estação no hemisfério do país."""
+    return months_in_season(season, country)[0]
 
-    Um mês explícito sempre vence: quem disse "julho" disse julho, mesmo que
-    também tenha dito "inverno".
+
+def resolve_season(preferences: TravelPreferences) -> TravelPreferences:
+    """Reconcilia `month` e `season`.
+
+    O prompt manda o modelo deixar `month` nulo quando o falante deu só a
+    estação, mas o `qwen2.5:3b` desobedece: para "verão no Brasil" ele devolvia
+    season "summer" E month "June" — a conversão fixa dele, errada para o sul.
+
+    Confiar cegamente no mês perpetuaria esse erro; ignorá-lo quebraria
+    "julho, no verão", onde o falante realmente disse o mês. A saída é checar
+    consistência: um mês que pertence à estação naquele hemisfério é preservado,
+    e um que não pertence é substituído pelo mês central da estação.
     """
-    if preferences.month is not None or preferences.season is None:
+    if preferences.season is None:
         return preferences
 
-    return preferences.model_copy(
-        update={"month": month_for_season(preferences.season, preferences.country)}
-    )
+    valid = months_in_season(preferences.season, preferences.country)
+    if preferences.month in valid:
+        return preferences
+
+    return preferences.model_copy(update={"month": valid[0]})
