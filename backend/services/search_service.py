@@ -15,6 +15,7 @@ import sqlite3
 import unicodedata
 
 from models.travel import Recommendation, TravelPackage, TravelPreferences
+from services.budget import BUDGET_CEILINGS
 
 # Deliberately above the sum of every other weight (305): naming a city beats a
 # package that matches all the soft criteria but sits somewhere else. A test
@@ -29,13 +30,6 @@ BUDGET_WEIGHT = 25
 TRAVELERS_WEIGHT = 10
 
 DEFAULT_LIMIT = 5
-
-# Upper bound (inclusive) of each spoken budget level, in BRL.
-BUDGET_CEILINGS: dict[str, float] = {
-    "low": 3000.0,
-    "medium": 6000.0,
-    "high": float("inf"),
-}
 
 
 def search_packages(

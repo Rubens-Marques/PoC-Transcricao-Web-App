@@ -364,14 +364,37 @@ source .venv/bin/activate
 pytest
 ```
 
-27 testes cobrindo as regras de pontuação, o contrato de extração e o endpoint
-HTTP. A suíte roda offline: `tests/conftest.py` força `LLM_PROVIDER=mock` e aponta
-o banco para um diretório temporário, então nem chave de API nem daemon do Ollama
-são necessários, e o `data/travel.db` populado nunca é tocado.
+46 testes cobrindo as regras de pontuação, a resolução de estações, o contrato de
+extração e o endpoint HTTP. A suíte roda offline: `tests/conftest.py` força
+`LLM_PROVIDER=mock` e aponta o banco para um diretório temporário, então nem
+chave de API nem daemon do Ollama são necessários, e o `data/travel.db` populado
+nunca é tocado.
 
-Os testes verificam o _contrato_ da extração, não a qualidade do modelo — isso
-nenhum teste unitário consegue afirmar. Para medir qualidade, ver a seção de
-avaliação em [DOCUMENTACAO.md](DOCUMENTACAO.md) §7.7.
+Os testes verificam o _contrato_ da extração — que sai um `TravelPreferences`
+válido. Se o conteúdo está **certo** é outra pergunta, e nenhum teste unitário
+responde.
+
+## Avaliação da extração
+
+```bash
+cd backend
+LLM_PROVIDER=ollama LLM_MODEL=qwen2.5:3b python -m eval.run_eval
+```
+
+[`eval/cases.json`](backend/eval/cases.json) tem 40 frases rotuladas à mão em PT
+e EN, agrupadas por classe de dificuldade: país vs cidade, tipo-de-lugar que não
+é destino, estações nos dois hemisférios, contagem implícita, orçamento por
+número e por palavra, negação, e frases que não dizem nada.
+
+O relatório sai por classe, o que mostra **onde** o modelo erra em vez de só
+quanto. É assim que se compara dois modelos ou duas versões do prompt sem
+depender de impressão.
+
+Isto não passa nem falha — mede. Rodar contra a VPS sem instalar modelo local:
+
+```bash
+docker compose exec backend python -m eval.run_eval
+```
 
 Verificação de tipos do frontend:
 

@@ -30,6 +30,7 @@ from models.travel import (
     TravelCategory,
     TravelPreferences,
 )
+from services.budget import resolve_budget
 from services.season import resolve_season
 
 logger = logging.getLogger(__name__)
@@ -220,10 +221,11 @@ async def extract_travel_preferences(text: str) -> TravelPreferences:
             f"Expected one of: {', '.join(SUPPORTED_PROVIDERS)}."
         )
 
-    # Estação -> mês é decidido aqui, não pelo modelo: depende do hemisfério do
-    # país, e é uma inferência condicional que modelo pequeno erra. Aplicado no
-    # dispatch para valer igual nos três providers.
-    return resolve_season(extracted)
+    # Normalizações que o modelo demonstrou não fazer de forma confiável, e que
+    # são determinísticas: estação -> mês depende do hemisfério, e valor ->
+    # faixa de orçamento é comparação de dois números. Aplicadas aqui no
+    # dispatch para valerem igual nos três providers.
+    return resolve_budget(resolve_season(extracted))
 
 
 async def _extract_with_ollama(text: str) -> TravelPreferences:
