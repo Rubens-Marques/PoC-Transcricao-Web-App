@@ -306,6 +306,21 @@ tokens canônicos em inglês que o schema define.
 Todo campo é nullable. Um campo só é preenchido quando o falante realmente disse
 aquilo — o modelo é instruído a não adivinhar.
 
+### O que o modelo não decide
+
+Duas inferências foram tiradas do modelo e movidas para código, depois de medir
+que ele errava:
+
+**Estação → mês** (`backend/services/season.py`). Instruído a aplicar o
+hemisfério conforme o país, o `qwen2.5:3b` respondia "verão" → June e "inverno"
+→ July para qualquer país. Ele agora extrai `season` como fato bruto, e o código
+deriva o mês. Quando o modelo devolve mês e estação juntos, vence o que for
+consistente: julho no verão português é preservado, junho no verão brasileiro é
+substituído por janeiro.
+
+O princípio geral: um modelo de 3B extrai fatos bem e faz lógica condicional
+mal. Peça o fato, calcule a derivação.
+
 ---
 
 ## Como funciona a busca
@@ -316,7 +331,8 @@ do spec:
 
 | Sinal                                  | Peso |
 | -------------------------------------- | ---: |
-| Destino nomeado pelo usuário           |  200 |
+| Cidade/região nomeada pelo usuário     |  400 |
+| País nomeado pelo usuário              |  120 |
 | Categoria casa                         |  100 |
 | Mês está na melhor temporada do pacote |   50 |
 | Preço cabe no orçamento                |   25 |

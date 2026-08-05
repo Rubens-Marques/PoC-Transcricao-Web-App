@@ -61,7 +61,7 @@ curl local. Ollama não publica porta: não tem autenticação.
 | Latência morna, ponta a ponta      | **mediana 7,2s** (6,7–9,0s)   |
 | Primeira request após restart      | **~64–70s** (carga do modelo) |
 | RAM do Ollama com modelo residente | 2,16 GB                       |
-| Acurácia da extração               | 5/5 nos casos testados        |
+| Acurácia da extração               | 6/7 nos casos testados        |
 
 Ponta a ponta = navegador → Cloudflare → tunnel → FastAPI → Ollama → SQLite.
 No Mac M-series com Metal a mesma extração leva 1,3s; a diferença é GPU.
@@ -110,11 +110,11 @@ Todas custaram um ciclo de debug. Estão registradas para não se repetirem.
 
 ## Riscos remanescentes
 
-| Risco                             | Estado                                                                                                           |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Sem swap                          | **Aberto.** Com 15 GB e 4,1 GB em uso a folga é grande, mas 4 GB de swapfile ainda seriam baratos                |
-| Contenção de CPU com o Elabore    | Contido: Ollama limitado a 2 dos 4 vCPU. Durante inferência o Elabore ainda disputa                              |
-| Latência de 7s para uma UX de voz | **Aberto.** Aceitável para demo, ruim para produto. Alternativas: `qwen2.5:1.5b` (mais rápido, erra mais) ou GPU |
+| Risco                             | Estado                                                                                                                                                                                                                           |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sem swap                          | **Aberto, e pela metade.** `/swapfile` de 4 GB existe mas não foi formatado nem ativado, e está em chmod 644 — swap legível vaza páginas de memória. Faltam `chmod 600`, `mkswap`, `swapon` e a entrada no fstab, todos com root |
+| Contenção de CPU com o Elabore    | Contido: Ollama limitado a 2 dos 4 vCPU. Durante inferência o Elabore ainda disputa                                                                                                                                              |
+| Latência de 7s para uma UX de voz | **Aberto.** Aceitável para demo, ruim para produto. Alternativas: `qwen2.5:1.5b` (mais rápido, erra mais) ou GPU                                                                                                                 |
 
 ## Volumes
 
