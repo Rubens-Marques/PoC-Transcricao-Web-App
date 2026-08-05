@@ -1,0 +1,279 @@
+{
+  "_readme": [
+    "Conjunto de avaliação da extração. Cada caso lista SÓ os campos que a frase",
+    "realmente expressa; campos ausentes do 'expected' são ignorados na conta,",
+    "exceto quando 'strict_null' lista campos que DEVEM sair nulos.",
+    "Um valor em lista significa 'qualquer um destes serve'.",
+    "'tag' agrupa por classe de dificuldade para o relatório."
+  ],
+  "cases": [
+    {
+      "tag": "basico",
+      "text": "Quero uma viagem de praia em dezembro",
+      "expected": { "category": "beach", "month": "December" }
+    },
+    {
+      "tag": "basico",
+      "text": "I want a beach trip in January",
+      "expected": { "category": "beach", "month": "January" }
+    },
+    {
+      "tag": "basico",
+      "text": "Uma viagem cultural em maio",
+      "expected": { "category": "culture", "month": "May" }
+    },
+    {
+      "tag": "basico",
+      "text": "quero fazer uma trilha, algo de aventura",
+      "expected": { "category": "adventure" }
+    },
+
+    {
+      "tag": "pais",
+      "text": "I want to go to Italy with my wife",
+      "expected": { "country": "Italy", "travelers": 2 },
+      "strict_null": ["destination"]
+    },
+    {
+      "tag": "pais",
+      "text": "Quero conhecer o Japão",
+      "expected": { "country": "Japan" },
+      "strict_null": ["destination"]
+    },
+    {
+      "tag": "pais",
+      "text": "Estou pensando em Portugal",
+      "expected": { "country": "Portugal" },
+      "strict_null": ["destination"]
+    },
+    {
+      "tag": "pais",
+      "text": "sonho em ir pra França",
+      "expected": { "country": "France" },
+      "strict_null": ["destination"]
+    },
+
+    {
+      "tag": "cidade",
+      "text": "Quero passar uma semana em Roma, na Itália",
+      "expected": { "destination": "Rome", "country": "Italy" }
+    },
+    {
+      "tag": "cidade",
+      "text": "Quero conhecer Gramado",
+      "expected": { "destination": "Gramado" }
+    },
+    {
+      "tag": "cidade",
+      "text": "vamos pra Buenos Aires",
+      "expected": { "destination": "Buenos Aires" }
+    },
+    {
+      "tag": "cidade",
+      "text": "quero ir a Kyoto no outono",
+      "expected": { "destination": "Kyoto", "season": "autumn" }
+    },
+
+    {
+      "tag": "tipo-nao-e-lugar",
+      "text": "quero ir pra praia",
+      "expected": { "category": "beach" },
+      "strict_null": ["destination", "country"]
+    },
+    {
+      "tag": "tipo-nao-e-lugar",
+      "text": "queria um lugar de montanha, com frio",
+      "expected": { "category": "cold" },
+      "strict_null": ["destination", "country"]
+    },
+
+    {
+      "tag": "estacao",
+      "text": "verão no Brasil",
+      "expected": {
+        "country": "Brazil",
+        "month": ["December", "January", "February"]
+      }
+    },
+    {
+      "tag": "estacao",
+      "text": "verão em Portugal",
+      "expected": {
+        "country": "Portugal",
+        "month": ["June", "July", "August"]
+      }
+    },
+    {
+      "tag": "estacao",
+      "text": "inverno na Itália",
+      "expected": {
+        "country": "Italy",
+        "month": ["December", "January", "February"]
+      }
+    },
+    {
+      "tag": "estacao",
+      "text": "quero viajar no inverno",
+      "expected": { "month": ["June", "July", "August"] }
+    },
+    {
+      "tag": "estacao",
+      "text": "primavera no Japão",
+      "expected": {
+        "country": "Japan",
+        "month": ["March", "April", "May"]
+      }
+    },
+
+    {
+      "tag": "contagem",
+      "text": "com minha esposa",
+      "expected": { "travelers": 2 }
+    },
+    {
+      "tag": "contagem",
+      "text": "com minha esposa e dois filhos",
+      "expected": { "travelers": 4 }
+    },
+    {
+      "tag": "contagem",
+      "text": "eu e mais três amigos",
+      "expected": { "travelers": 4 }
+    },
+    {
+      "tag": "contagem",
+      "text": "vou viajar sozinho",
+      "expected": { "travelers": 1 }
+    },
+    {
+      "tag": "contagem",
+      "text": "somos um casal com um bebê",
+      "expected": { "travelers": 3 }
+    },
+    {
+      "tag": "contagem",
+      "text": "viagem para seis pessoas",
+      "expected": { "travelers": 6 }
+    },
+
+    {
+      "tag": "orcamento",
+      "text": "tenho uns 5000 reais",
+      "expected": { "max_budget": 5000.0, "budget_level": "medium" }
+    },
+    {
+      "tag": "orcamento",
+      "text": "até 2000 reais",
+      "expected": { "max_budget": 2000.0, "budget_level": "low" }
+    },
+    {
+      "tag": "orcamento",
+      "text": "posso gastar 12 mil",
+      "expected": { "max_budget": 12000.0, "budget_level": "high" }
+    },
+    {
+      "tag": "orcamento",
+      "text": "quero algo barato",
+      "expected": { "budget_level": "low" },
+      "strict_null": ["max_budget"]
+    },
+    {
+      "tag": "orcamento",
+      "text": "uma viagem de luxo",
+      "expected": { "budget_level": "high" },
+      "strict_null": ["max_budget"]
+    },
+
+    {
+      "tag": "negacao",
+      "text": "não quero praia",
+      "strict_null": ["category"]
+    },
+    {
+      "tag": "negacao",
+      "text": "qualquer coisa menos frio",
+      "strict_null": ["category"]
+    },
+    {
+      "tag": "negacao",
+      "text": "não quero ir pro Brasil",
+      "strict_null": ["country"]
+    },
+
+    {
+      "tag": "nada-dito",
+      "text": "quero viajar",
+      "strict_null": [
+        "destination",
+        "country",
+        "category",
+        "month",
+        "season",
+        "travelers",
+        "budget_level",
+        "max_budget"
+      ]
+    },
+    {
+      "tag": "nada-dito",
+      "text": "me sugere alguma coisa",
+      "strict_null": [
+        "destination",
+        "country",
+        "category",
+        "month",
+        "season",
+        "travelers",
+        "budget_level",
+        "max_budget"
+      ]
+    },
+    {
+      "tag": "nada-dito",
+      "text": "Quero passar uma semana em Roma",
+      "expected": { "destination": "Rome" },
+      "strict_null": ["month", "season"]
+    },
+
+    {
+      "tag": "composto",
+      "text": "Quero conhecer Gramado no inverno com minha esposa, uns 3000 reais",
+      "expected": {
+        "destination": "Gramado",
+        "month": ["June", "July", "August"],
+        "travelers": 2,
+        "max_budget": 3000.0
+      }
+    },
+    {
+      "tag": "composto",
+      "text": "praia barata em janeiro para duas pessoas",
+      "expected": {
+        "category": "beach",
+        "month": "January",
+        "travelers": 2,
+        "budget_level": "low"
+      }
+    },
+    {
+      "tag": "composto",
+      "text": "I want a cultural trip to Spain in October for four people",
+      "expected": {
+        "country": "Spain",
+        "category": "culture",
+        "month": "October",
+        "travelers": 4
+      }
+    },
+    {
+      "tag": "composto",
+      "text": "aventura no Peru em julho, até 10 mil reais",
+      "expected": {
+        "country": "Peru",
+        "category": "adventure",
+        "month": "July",
+        "max_budget": 10000.0
+      }
+    }
+  ]
+}
