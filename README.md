@@ -94,7 +94,7 @@ POC/
 │   │   └── travel.py               # contratos Pydantic
 │   ├── database/
 │   │   ├── db.py                   # conexão + schema
-│   │   └── seed.py                 # 12 pacotes de demonstração
+│   │   └── seed.py                 # 35 pacotes em 10 países
 │   └── tests/                      # pytest
 └── frontend/
     ├── app/                        # layout.tsx, page.tsx, globals.css
@@ -133,7 +133,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 cp .env.example .env      # depois edite — ver "Variáveis de ambiente" abaixo
-python -m database.seed   # cria data/travel.db com 12 pacotes
+python -m database.seed   # cria data/travel.db com 35 pacotes
 
 uvicorn main:app --reload
 ```
@@ -322,8 +322,13 @@ do spec:
 | Preço cabe no orçamento                |   25 |
 | Grupo cabe na capacidade do pacote     |   10 |
 
-O destino fica deliberadamente acima da soma de todo o resto: se alguém nomeia um
-lugar, isso vence um pacote que casa com todos os critérios moles em outro lugar.
+`destination` e `country` são campos separados de propósito: quem diz "quero ir
+para a Itália" não nomeou cidade, e quem diz "Gramado" não nomeou país. Forçar um
+campo só fazia o modelo escolher entre os dois — e escolher errado.
+
+A cidade fica deliberadamente acima da soma de todo o resto (305): se alguém
+nomeia um lugar específico, isso vence um pacote que casa com todos os critérios
+moles em outro lugar. Um teste falha se alguém subir outro peso sem ajustar este.
 
 Tetos de orçamento quando nenhum valor explícito é dado: `low` ≤ R$ 3.000,
 `medium` ≤ R$ 6.000, `high` sem limite. Um `max_budget` explícito sempre vence o
@@ -384,7 +389,8 @@ O reconhecimento de fala também exige contexto seguro: `localhost` ou HTTPS.
 Deliberadas, para uma versão 1:
 
 - Sem autenticação, sem pagamentos, sem reserva.
-- O catálogo são 12 linhas fixas carregadas por um script de seed.
+- O catálogo são 35 linhas fixas carregadas por um script de seed
+  (`backend/database/seed.py`), em 10 países.
 - As queries SQLite rodam de forma síncrona dentro de rotas async. O conjunto de
   dados são uma dúzia de linhas locais, então a janela de bloqueio é desprezível;
   o caminho de evolução está marcado com um comentário `ponytail:` em

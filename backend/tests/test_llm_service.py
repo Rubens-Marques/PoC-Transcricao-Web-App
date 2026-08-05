@@ -116,7 +116,13 @@ def test_local_prompt_extends_the_shared_one() -> None:
 def test_local_prompt_covers_the_observed_failure_modes() -> None:
     # Arrange: each rule below was added after qwen2.5:3b got that case wrong.
     # If someone trims the prompt, this says which behaviour they are giving up.
-    for rule in ("PROPER NOUN", "Never default to", "SOUTHERN", '5000 is "medium"'):
+    for rule in (
+        "PROPER NOUN",
+        "Never default to",
+        "HEMISPHERE",  # catálogo é global: verão em Portugal != verão no Brasil
+        "A COUNTRY never goes in `destination`",
+        '5000 is "medium"',
+    ):
         # Act / Assert
         assert rule in OLLAMA_SYSTEM_PROMPT, f"missing guard: {rule}"
 

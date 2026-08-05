@@ -136,9 +136,15 @@ never drop it.
 - When counting `travelers`, ALWAYS add the speaker to the people they name. Do
 the sum explicitly: "com minha esposa" = 1 speaker + 1 wife = 2. "com minha
 esposa e dois filhos" = 1 + 1 + 2 = 4. "eu e mais três amigos" = 1 + 3 = 4.
-- Seasons are SOUTHERN hemisphere (Brazil): "verão"/"summer" is December-February,
-"inverno"/"winter" is June-August, "outono" is March-May, "primavera" is
-September-November. Pick the middle month when only a season is named.
+- Seasons depend on the HEMISPHERE of the place being discussed. Pick the middle
+month of the season.
+  - Southern (Brazil, Argentina, Chile, Peru, Australia): "verão"/"summer" is
+    December-February, "inverno"/"winter" is June-August.
+  - Northern (Italy, France, Spain, Portugal, Japan, United States, Europe in
+    general): "verão"/"summer" is June-August, "inverno"/"winter" is
+    December-February.
+  - If no place was named, assume southern — the speaker is Brazilian.
+  - "verão em Portugal" -> July. "verão no Brasil" -> January.
 - `budget_level` from an amount is arithmetic, not opinion: below 3000 is "low",
 3000 to 6000 inclusive is "medium", above 6000 is "high". 5000 is "medium".
 - If the speaker says they do NOT want something ("não quero praia", "anything
