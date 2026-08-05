@@ -87,5 +87,23 @@ services:
           cpus: "0.5"
           memory: 512m
 
+  # Edge opcional: `docker compose --profile edge up -d`.
+  # Fora do profile para que um `docker compose up` local não exija credencial.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["edge"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./.infra/cloudflared:/etc/cloudflared:ro
+    depends_on:
+      - backend
+      - frontend
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128m
+
 volumes:
   ollama-models:

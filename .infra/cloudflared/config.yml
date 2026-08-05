@@ -1,0 +1,33 @@
+# Cloudflare Tunnel — expõe a PoC sem abrir porta nenhuma no host e sem tocar
+# no nginx que serve a produção do Elabore.
+#
+# O cloudflared roda como container na mesma rede do compose, então os destinos
+# são NOMES DE SERVIÇO, não localhost — dentro de um container, localhost é o
+# próprio container.
+#
+# O arquivo de credencial referenciado abaixo NÃO está no git (ver .gitignore).
+# Copiar com:
+#   scp ~/.cloudflared/<uuid>.json elabore-vps:/home/deploy/poc-transcricao/.infra/cloudflared/
+
+tunnel: 2b194ee3-91de-4c13-8e34-f014153a45c8
+credentials-file: /etc/cloudflared/2b194ee3-91de-4c13-8e34-f014153a45c8.json
+
+ingress:
+  # A API precisa vir antes da regra geral: a primeira que casar vence.
+  # O path não é reescrito — o router do FastAPI já tem o prefixo /api.
+  - hostname: poc.nexusdatabi.com
+    path: ^/api/.*
+    service: http://backend:8000
+
+  - hostname: poc.nexusdatabi.com
+    path: ^/health$
+    service: http://backend:8000
+
+  - hostname: poc.nexusdatabi.com
+    service: http://frontend:3000
+    originRequest:
+      # Inferência em CPU é lenta; o default de 30s corta antes de responder.
+      connectTimeout: 30s
+
+  # Obrigatório: catch-all.
+  - service: http_status:404

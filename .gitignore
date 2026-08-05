@@ -20,5 +20,8 @@ out/
 next-env.d.ts
 *.tsbuildinfo
 
+# Credenciais do Cloudflare Tunnel — nunca commitar
+.infra/cloudflared/*.json
+
 # OS
 .DS_Store
