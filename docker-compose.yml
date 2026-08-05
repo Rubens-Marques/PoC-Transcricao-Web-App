@@ -79,7 +79,9 @@ services:
     build:
       context: ./frontend
       args:
-        # URL que o NAVEGADOR usa — precisa ser a pública, não um host interno.
+        # URL que o NAVEGADOR usa — pública, não host interno. Apenas a ORIGEM:
+        # services/api.ts concatena "/api/recommendations". Com /api aqui, vira
+        # /api/api/... e 404.
         NEXT_PUBLIC_API_BASE_URL: ${PUBLIC_API_URL:-http://localhost:8001}
     restart: unless-stopped
     depends_on:
