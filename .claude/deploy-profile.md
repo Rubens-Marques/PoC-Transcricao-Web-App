@@ -1,29 +1,32 @@
 # Deploy profile — PoC Transcrição Web App
 
-> ⚠️ **NÃO DEPLOYADO AINDA.** Este perfil descreve um deploy planejado, não um
-> deploy existente. Ler a seção "Risco no alvo atual" antes de executar
-> qualquer coisa.
+> ⚠️ **NÃO DEPLOYADO AINDA.** Este perfil descreve um deploy planejado. Ler
+> "Pré-condições" antes de executar qualquer coisa.
 
 ## Identity
 
 - Repo: `PoC-Transcricao-Web-App` (github.com/Rubens-Marques)
 - Stack: Next.js 16 + FastAPI + SQLite + Ollama (`qwen2.5`)
-- Edge: **indefinido** — a VPS candidata não tem proxy reverso livre
+- Edge: `elabore-api-nginx-1` (o mesmo que já serve a produção do Elabore)
 
-## Alvo candidato
+## Alvo
 
-- Host: `elabore-vps` (187.127.10.155), Ubuntu 24.04
+- Host: `elabore-vps` (187.127.10.155), Ubuntu 24.04, Hostinger
 - Compose: `docker-compose.yml` (raiz do repo)
+- Domínio previsto: `poc.nexusdatabi.com` — **ainda não registrado**
 
-### Recursos medidos em 2026-08-05
+### Recursos medidos em 2026-08-05 (ANTES do upgrade)
 
-| Recurso | Valor                                  |
-| ------- | -------------------------------------- |
-| CPU     | 2 vCPU (AMD EPYC 9354P, compartilhado) |
-| RAM     | 7,8 GB total · 5,9 GB disponível       |
-| Swap    | **0 B**                                |
-| Disco   | 96 GB · 38 GB livres                   |
-| GPU     | nenhuma                                |
+| Recurso | Antes                   | Depois do upgrade planejado |
+| ------- | ----------------------- | --------------------------- |
+| CPU     | 2 vCPU (AMD EPYC 9354P) | **a confirmar**             |
+| RAM     | 7,8 GB · 5,9 GB livre   | 16 GB                       |
+| Swap    | 0 B                     | 0 B (inalterado)            |
+| Disco   | 96 GB · 38 GB livres    | a confirmar                 |
+| GPU     | nenhuma                 | nenhuma                     |
+
+**Re-medir depois do upgrade.** Se o plano da Hostinger que entrega 16 GB também
+dobrar as vCPUs, esse é o ganho maior — CPU é o que dita a latência, não RAM.
 
 ### Já rodando no host (produção Elabore)
 
@@ -31,48 +34,70 @@
 `elabore-api-jobs-1` · `elabore-api-postgres-1` · `elabore-api-nginx-1` ·
 `elabore-ia` · `elabore-ia-staging`
 
-`elabore-api-nginx-1` é dono de **0.0.0.0:80 e 0.0.0.0:443**. Não há Traefik,
-Dokploy nem nginx de host — o roteamento de qualquer novo serviço passa por
-editar a configuração desse container de produção.
+## Edge / TLS — como o host já funciona
 
-## Risco no alvo atual
+`elabore-api-nginx-1` é dono de `0.0.0.0:80` e `0.0.0.0:443` e serve quatro
+subdomínios: `elaboreprovas`, `dev-rubens.elaboreprovas`, `elabore-api` e
+`elabore-ia`, todos sob `nexusdatabi.com`.
 
-Três fatores que se somam:
+| O quê        | Onde (host)                             | Montado no container     |
+| ------------ | --------------------------------------- | ------------------------ |
+| Configs      | `/home/deploy/elabore-api/.infra/nginx` | `/etc/nginx/conf.d` (ro) |
+| Certificados | `/etc/letsencrypt`                      | `/etc/letsencrypt` (ro)  |
+| Webroot ACME | `/var/www/certbot`                      | `/var/www/certbot` (ro)  |
 
-1. **2 vCPU, sem GPU.** Uma inferência satura os cores disponíveis. O compose
-   limita o Ollama a 1,0 CPU justamente para deixar 1 vCPU ao Elabore — mas
-   isso ainda reduz pela metade a CPU disponível para a produção durante cada
-   request.
-2. **Zero swap.** Se a RAM estourar, o OOM killer age sem rede de proteção e
-   tende a escolher o processo mais gordo — provavelmente o Postgres do
-   Elabore. Os limites de memória do compose (3 GB + 512 MB + 512 MB = 4 GB)
-   cabem nos 5,9 GB disponíveis, mas a margem é apertada.
-3. **HTTPS.** O microfone do browser exige contexto seguro. Só IP não serve —
-   é preciso domínio e certificado, servidos pelo nginx de produção do Elabore.
+Adicionar a PoC é o mesmo padrão repetido uma quinta vez. O template está em
+`.infra/nginx/poc.conf.example` neste repo.
 
-**Recomendação: não subir neste host.** Ver alternativas abaixo.
+**Por que isso é menos arriscado do que parece:** `nginx -t` valida a config
+antes do reload. Config errada → o teste falha, o reload não acontece, a
+produção segue com a config antiga. Um server block novo para um `server_name`
+novo não altera os quatro existentes.
+
+## Pré-condições (nenhuma cumprida ainda)
+
+1. [ ] Upgrade de RAM concluído e recursos re-medidos
+2. [ ] Registro DNS A: `poc.nexusdatabi.com` → 187.127.10.155
+3. [ ] Certificado emitido via certbot (webroot `/var/www/certbot`)
+4. [ ] Swapfile de 4 GB — barato, e remove a última chance de OOM
+5. [ ] Confirmação explícita do Rubens para mexer no host de produção
+
+## Riscos remanescentes
+
+| Risco                              | Status após o upgrade                                                        |
+| ---------------------------------- | ---------------------------------------------------------------------------- |
+| OOM matando o Postgres             | **Muito reduzido** com 16 GB. Swapfile fecha de vez                          |
+| Contenção de CPU com o Elabore     | **Depende** do vCPU pós-upgrade. Limites do compose contêm, mas não eliminam |
+| Reload do nginx de produção        | **Baixo** — `nginx -t` valida antes                                          |
+| HTTPS obrigatório para o microfone | **Resolvido** pelo caminho de certbot acima                                  |
 
 ## Modelo
 
-| Ambiente                              | Modelo         | Latência medida |
-| ------------------------------------- | -------------- | --------------- |
-| Mac M-series (Metal)                  | `qwen2.5:3b`   | 1,3s mediana    |
-| VPS 2 vCPU (estimado, **não medido**) | `qwen2.5:3b`   | 20s+            |
-| VPS 2 vCPU (estimado, **não medido**) | `qwen2.5:1.5b` | 5–10s           |
+| Ambiente             | Modelo         | Latência                         |
+| -------------------- | -------------- | -------------------------------- |
+| Mac M-series (Metal) | `qwen2.5:3b`   | 1,3s mediana — **medido**        |
+| VPS 2 vCPU           | `qwen2.5:3b`   | 20s+ — **estimado, não medido**  |
+| VPS 2 vCPU           | `qwen2.5:1.5b` | 5–10s — **estimado, não medido** |
+| VPS 4 vCPU           | `qwen2.5:3b`   | 8–15s — **estimado, não medido** |
 
-O compose usa `qwen2.5:1.5b` por padrão via `LLM_MODEL`. Isso é uma concessão
-ao hardware, não a escolha de qualidade — o 1.5b erra mais em negação e
-contagem implícita. Nenhum dos números de VPS foi medido ainda.
+O compose usa `qwen2.5:1.5b` por padrão. Com 4 vCPU, subir para `3b`:
+
+```bash
+LLM_MODEL=qwen2.5:3b OLLAMA_CPUS=2.0 OLLAMA_MEM=6g docker compose up -d
+```
+
+Nenhum número de VPS foi medido. A forma mais barata de medir sem tocar em
+produção é o túnel SSH descrito abaixo.
 
 ## Comandos
 
 ```bash
-# Da raiz do repo, no host alvo:
-PUBLIC_ORIGIN=https://<dominio> \
-PUBLIC_API_URL=https://<dominio>/api \
+# No host alvo, da raiz do repo:
+PUBLIC_ORIGIN=https://poc.nexusdatabi.com \
+PUBLIC_API_URL=https://poc.nexusdatabi.com/api \
 docker compose up -d --build
 
-# Primeira subida baixa o modelo (ollama-pull). Acompanhar:
+# Primeira subida baixa o modelo:
 docker compose logs -f ollama-pull
 
 # Saúde:
@@ -83,21 +108,22 @@ Portas ligadas apenas em `127.0.0.1` (8001 backend, 3001 frontend). O Ollama
 **não publica porta** — não tem autenticação, e expor a 11434 entrega compute
 para qualquer um que ache o IP.
 
-## Alternativas ao alvo atual
+## Medir latência sem tocar em produção
 
-1. **VPS separada** — 4 vCPU / 8 GB dedicada. Sem risco à produção, e permite
-   voltar ao `qwen2.5:3b`.
-2. **Túnel SSH** — só o Ollama na VPS, backend e frontend locais, alcançados
-   por `ssh -L 11434:localhost:11434 elabore-vps`. Mede a latência real em CPU
-   sem tocar em nginx nem expor porta.
-3. **Adicionar swap ao host** — 4 GB de swapfile removem o risco de OOM, mas
-   não resolvem a contenção de CPU nem o HTTPS.
+```bash
+ssh -L 11434:localhost:11434 elabore-vps   # túnel, sem porta aberta
+# noutro terminal, backend local apontando para a VPS:
+LLM_PROVIDER=ollama OLLAMA_HOST=http://localhost:11434 uvicorn main:app
+```
+
+Responde "quanto custa isso em CPU nesta máquina?" em minutos, sem nginx, sem
+container novo, sem risco ao Elabore.
 
 ## Volumes
 
-| Volume          | Conteúdo                        | Perda se apagado             |
-| --------------- | ------------------------------- | ---------------------------- |
-| `ollama-models` | Pesos do modelo (~1 GB no 1.5b) | Re-download no próximo start |
+| Volume          | Conteúdo                                     | Perda se apagado             |
+| --------------- | -------------------------------------------- | ---------------------------- |
+| `ollama-models` | Pesos do modelo (~1 GB no 1.5b, ~2 GB no 3b) | Re-download no próximo start |
 
 O SQLite é populado no build da imagem (`RUN python -m database.seed`) — é
 catálogo de demonstração, descartável, sem volume.

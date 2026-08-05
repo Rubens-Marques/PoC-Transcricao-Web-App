@@ -1,0 +1,64 @@
+# Server block da PoC, no mesmo padrão dos 4 subdomínios já servidos por
+# elabore-api-nginx-1.
+#
+# Instalação no host:
+#   1. DNS: registro A  poc.nexusdatabi.com -> 187.127.10.155
+#   2. Cert: certbot certonly --webroot -w /var/www/certbot \
+#              -d poc.nexusdatabi.com
+#   3. Copiar este arquivo (sem .example) para
+#        /home/deploy/elabore-api/.infra/nginx/poc.conf
+#   4. docker exec elabore-api-nginx-1 nginx -t     <- valida ANTES
+#   5. docker exec elabore-api-nginx-1 nginx -s reload
+#
+# O passo 4 é o que torna isso seguro: se a config estiver errada, o teste
+# falha e o reload não acontece — a produção segue no ar com a config antiga.
+
+server {
+    listen 80;
+    server_name poc.nexusdatabi.com;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name poc.nexusdatabi.com;
+
+    ssl_certificate     /etc/letsencrypt/live/poc.nexusdatabi.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/poc.nexusdatabi.com/privkey.pem;
+
+    # A Web Speech API só libera o microfone em contexto seguro. Sem este bloco
+    # TLS a PoC não funciona por voz — só digitando.
+
+    # Backend: /api/* -> FastAPI em 127.0.0.1:8001
+    location /api/ {
+        proxy_pass http://127.0.0.1:8001;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Inferência em CPU é lenta. O default de 60s do nginx derruba o
+        # request antes de o modelo terminar.
+        proxy_read_timeout 120s;
+    }
+
+    location = /health {
+        proxy_pass http://127.0.0.1:8001/health;
+    }
+
+    # Frontend: tudo mais -> Next.js em 127.0.0.1:3001
+    location / {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

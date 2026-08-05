@@ -22,8 +22,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.0" # deixa 1 vCPU livre para o Elabore
-          memory: 3g
+          # Defaults conservadores para 2 vCPU / 8 GB. Num host de 4 vCPU / 16 GB
+          # subir para OLLAMA_CPUS=2.0 e OLLAMA_MEM=6g permite voltar ao 3b.
+          cpus: ${OLLAMA_CPUS:-1.0}
+          memory: ${OLLAMA_MEM:-3g}
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 10s
@@ -55,8 +57,8 @@ services:
     environment:
       LLM_PROVIDER: ollama
       OLLAMA_HOST: http://ollama:11434
-      # 1.5b, não 3b: em 2 vCPU compartilhadas o 3b passa de 20s por request.
-      # Ver .claude/deploy-profile.md para o trade-off medido.
+      # Default 1.5b porque em 2 vCPU o 3b fica lento demais. Com 4 vCPU,
+      # LLM_MODEL=qwen2.5:3b — ver .claude/deploy-profile.md.
       LLM_MODEL: ${LLM_MODEL:-qwen2.5:1.5b}
       CORS_ORIGINS: ${PUBLIC_ORIGIN:-http://localhost:3001}
       LOG_LEVEL: INFO
