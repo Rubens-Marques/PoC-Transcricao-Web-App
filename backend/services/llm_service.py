@@ -112,11 +112,11 @@ Rules:
 adventure, culture, nature.
 - `travelers` counts every person on the trip. "with my wife" is 2, \
 "with my wife and two kids" is 4, "alone" is 1.
-- `max_budget` is only set when a number is stated (e.g. "up to 5000 reais" -> 5000). \
-A stated number also implies a `budget_level`: under 3000 is low, 3000-6000 is \
-medium, above 6000 is high.
-- `budget_level` may also come from words alone: "cheap"/"barato" -> low, \
-"luxury"/"luxuoso" -> high.
+- `max_budget` is only set when a number is stated ("up to 5000 reais" -> 5000). \
+Do NOT derive `budget_level` from it — leave `budget_level` null when a number \
+was given. The application computes the band itself.
+- `budget_level` is only for when NO number was given and the speaker used words: \
+"cheap"/"barato" -> low, "luxury"/"luxuoso" -> high.
 - `destination` and `country` are separate fields. Split what the speaker said \
 across them; never merge them into one.
   - "Gramado" -> destination "Gramado", country null (they did not say the country)
@@ -154,8 +154,6 @@ depends on the hemisphere.
   - "no verão" -> season "summer", month null
   - "em julho" -> month "July", season null
   - "no inverno europeu" -> season "winter", month null
-- `budget_level` from an amount is arithmetic, not opinion: below 3000 is "low",
-3000 to 6000 inclusive is "medium", above 6000 is "high". 5000 is "medium".
 - If the speaker says they do NOT want something ("não quero praia", "anything
 but the beach"), leave that field null. Never fill it with the rejected value.
 
@@ -163,7 +161,7 @@ Worked examples:
 
 "Quero uma praia em dezembro com minha esposa, uns 5000 reais"
 {"destination":null,"country":null,"category":"beach","month":"December",\
-"season":null,"travelers":2,"budget_level":"medium","max_budget":5000}
+"season":null,"travelers":2,"budget_level":null,"max_budget":5000}
 
 "Quero conhecer Gramado no inverno"
 {"destination":"Gramado","country":null,"category":"cold","month":null,\

@@ -122,7 +122,8 @@ def test_local_prompt_covers_the_observed_failure_modes() -> None:
         # Estação nunca vira mês no modelo — services/season.py faz isso.
         "NEVER convert a season into a month",
         "A COUNTRY never goes in `destination`",
-        '5000 is "medium"',
+        # Faixa de orçamento é derivada em services/budget.py, não pelo modelo.
+        "Do NOT derive `budget_level`",
     ):
         # Act / Assert
         assert rule in OLLAMA_SYSTEM_PROMPT, f"missing guard: {rule}"
