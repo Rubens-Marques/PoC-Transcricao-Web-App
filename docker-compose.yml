@@ -15,6 +15,11 @@ services:
   ollama:
     image: ollama/ollama:0.12.6
     restart: unless-stopped
+    environment:
+      # Mantém o modelo residente. Sem isso o Ollama descarrega após 5 min de
+      # ociosidade e a request seguinte paga a recarga: medimos 70s de cold
+      # start contra 9s morno. Custo: ~3 GB de RAM permanentes.
+      OLLAMA_KEEP_ALIVE: "-1"
     volumes:
       - ollama-models:/root/.ollama
     # Sem `ports:` de propósito. Ollama não tem auth — expor a 11434 entrega
