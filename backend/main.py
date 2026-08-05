@@ -18,6 +18,7 @@ load_dotenv()
 
 from database.db import connect, init_schema  # noqa: E402  (needs env loaded)
 from routes.recommendations import router as recommendations_router  # noqa: E402
+from services.llm_service import DEFAULT_PROVIDER  # noqa: E402
 
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
 
@@ -63,7 +64,10 @@ def create_app() -> FastAPI:
 
     @app.get("/health", tags=["meta"])
     async def health() -> dict[str, str]:
-        return {"status": "ok", "provider": os.environ.get("LLM_PROVIDER", "anthropic")}
+        return {
+            "status": "ok",
+            "provider": os.environ.get("LLM_PROVIDER", DEFAULT_PROVIDER),
+        }
 
     return app
 

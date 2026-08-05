@@ -13,8 +13,12 @@ Duas partes:
   modelos de IA saírem de uma API externa para modelos locais — Whisper para
   transcrição e um LLM pequeno para extração de dados.
 
-A Parte II é **projeto, não implementação**. O spec da versão 1 proíbe
-explicitamente modelos locais; nada da Parte II está presente no código.
+> **Estado atual (atualizado).** A Fase 2 da Parte II — extração num modelo local
+> — **já está implementada e é o padrão do projeto**: `qwen2.5:3b` via Ollama,
+> selecionado por `LLM_PROVIDER=ollama`. Isso diverge do spec da versão 1, que
+> proibia modelos locais, por decisão explícita posterior. O restante da Parte II
+> (Fase 1, Whisper local; Fase 3, modelo no browser) continua sendo projeto, não
+> implementação. Ver §10 para o estado de cada fase.
 
 ---
 
@@ -842,10 +846,29 @@ a `NEXT_PUBLIC_STT_ENGINE`, rode os dois contra o mesmo áudio gravado. Esta é 
 mudança de maior valor: corrige Firefox/Safari, remove a transferência de áudio
 para o Google, e não toca o backend.
 
-**Fase 2 — Extração local atrás de uma flag.** Adicione `LLM_PROVIDER=ollama` ao
-lado de `anthropic` e `mock`, reaproveitando `PREFERENCES_SCHEMA` e
-`SYSTEM_PROMPT` sem alteração. Rode contra o conjunto de avaliação. Decida pelos
-números, especialmente pela contagem de inversões.
+**Fase 2 — Extração local. ✅ FEITA, e é o padrão.** `LLM_PROVIDER=ollama` roda
+ao lado de `anthropic` e `mock`, com `qwen2.5:3b` (1,9 GB) na máquina local.
+
+O que a implementação confirmou e o que corrigiu na previsão deste documento:
+
+- **Confirmado:** o contrato sobrevive à troca. `PREFERENCES_SCHEMA` é enviado
+  sem nenhuma alteração, agora via `format=`, e a linha
+  `TravelPreferences.model_validate_json(...)` é idêntica. O constrained decoding
+  entrega a mesma garantia de schema da API hospedada.
+- **Confirmado:** as falhas previstas em §7.7 aconteceram, quase todas. Nome de
+  categoria vazando para `destination`, faixa de orçamento errada, estação lida
+  como hemisfério norte, e `travelers` inventado como 1.
+- **Corrigido:** `SYSTEM_PROMPT` **não** sobreviveu sem alteração. Foi preciso
+  um `OLLAMA_SYSTEM_PROMPT` que estende o base com regras explícitas e três
+  exemplos resolvidos. Este documento previa uma troca de "cerca de vinte
+  linhas"; foram vinte linhas de código e cerca de trinta de prompt.
+- **Melhor que o previsto:** a negação não inverteu. "não quero praia, prefiro
+  montanha" devolveu `nature`, não `beach` — o modo de falha mais perigoso de
+  §7.7 não se materializou nos casos testados.
+
+Latência mediana de 1,3s, contra ~1–3s estimados. Acurácia por campo de 100% num
+conjunto de 9 frases — número otimista, porque o prompt foi ajustado sobre parte
+dessas frases. O conjunto de avaliação independente da Fase 0 continua pendente.
 
 **Fase 3 — Só se totalmente offline for requisito.** Mova a extração para o
 browser com WebLLM, adicione o endpoint `{ preferences }`, mantenha o endpoint

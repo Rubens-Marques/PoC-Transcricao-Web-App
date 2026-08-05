@@ -58,12 +58,12 @@ Voice → Text → LLM → Structured Data → Database Search → Recommendatio
 
 ### Stack
 
-| Layer    | Choice                                                         |
-| -------- | -------------------------------------------------------------- |
-| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4 |
-| Backend  | FastAPI, Pydantic v2                                           |
-| Database | SQLite                                                         |
-| AI       | External API only (Anthropic Messages API). No local models.   |
+| Layer    | Choice                                                            |
+| -------- | ----------------------------------------------------------------- |
+| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4    |
+| Backend  | FastAPI, Pydantic v2                                              |
+| Database | SQLite                                                            |
+| AI       | `qwen2.5:3b` local via Ollama (default) or Anthropic Messages API |
 
 ---
 
@@ -98,9 +98,23 @@ POC/
 
 ## Setup
 
-Prerequisites: **Python 3.11+** and **Node.js 20+**.
+Prerequisites: **Python 3.11+**, **Node.js 20+** and **Ollama**.
 
-### 1. Backend
+### 1. Local model
+
+```bash
+brew install ollama          # or https://ollama.com/download
+ollama serve &               # daemon on localhost:11434
+ollama pull qwen2.5:3b       # ~1.9 GB, downloaded once
+```
+
+To keep the daemon running across logins: `brew services start ollama`.
+
+Needs ~2.5 GB of free RAM while answering. On a roomier machine, `qwen2.5:7b`
+makes fewer mistakes on negation and implicit counting — switch with
+`LLM_MODEL=qwen2.5:7b`.
+
+### 2. Backend
 
 ```bash
 cd backend
@@ -117,9 +131,9 @@ uvicorn main:app --reload
 The API listens on <http://localhost:8000>. Interactive docs at
 <http://localhost:8000/docs>.
 
-### 2. Frontend
+### 3. Frontend
 
-In a second terminal:
+In a third terminal:
 
 ```bash
 cd frontend
@@ -139,21 +153,36 @@ Secrets are never hardcoded. Both `.env` files are gitignored; only the
 
 ### `backend/.env`
 
-| Variable        | Required | Default                  | Notes                                      |
-| --------------- | -------- | ------------------------ | ------------------------------------------ |
-| `LLM_PROVIDER`  | no       | `anthropic`              | `anthropic` or `mock`                      |
-| `LLM_API_KEY`   | yes¹     | —                        | Provider API key                           |
-| `LLM_MODEL`     | no       | `claude-opus-5`          | Any model that supports structured outputs |
-| `CORS_ORIGINS`  | no       | `http://localhost:3000`  | Comma-separated                            |
-| `DATABASE_PATH` | no       | `backend/data/travel.db` |                                            |
-| `LOG_LEVEL`     | no       | `INFO`                   |                                            |
+| Variable        | Required | Default                  | Notes                                 |
+| --------------- | -------- | ------------------------ | ------------------------------------- |
+| `LLM_PROVIDER`  | no       | `ollama`                 | `ollama`, `anthropic` or `mock`       |
+| `OLLAMA_HOST`   | no       | `http://localhost:11434` | Where the Ollama daemon listens       |
+| `LLM_API_KEY`   | yes¹     | —                        | API key, `anthropic` only             |
+| `LLM_MODEL`     | no       | per provider²            | Overrides the active provider's model |
+| `CORS_ORIGINS`  | no       | `http://localhost:3000`  | Comma-separated                       |
+| `DATABASE_PATH` | no       | `backend/data/travel.db` |                                       |
+| `LOG_LEVEL`     | no       | `INFO`                   |                                       |
 
 ¹ Required only when `LLM_PROVIDER=anthropic`.
+² `qwen2.5:3b` for `ollama`, `claude-opus-5` for `anthropic`.
 
-**`LLM_PROVIDER=mock`** swaps the API call for local keyword matching (PT and
-EN). It exists so the whole chain can be demoed — and tested in CI — without a
-key. It is a demo aid, not a fallback: it understands a handful of keywords, not
-language.
+| Provider    | Runs on      | Does data leave the machine? |
+| ----------- | ------------ | ---------------------------- |
+| `ollama`    | Your machine | **No**                       |
+| `anthropic` | Hosted API   | Yes                          |
+| `mock`      | Your machine | **No**                       |
+
+**`LLM_PROVIDER=ollama`** is the default. Constrained decoding via
+`format=<schema>` guarantees the output obeys the JSON Schema — the same
+guarantee the hosted API gives. That is the only reason a 3B model is usable here.
+
+> ⚠️ An Ollama model whose name ends in `-cloud` (e.g. `qwen3.5:397b-cloud`)
+> **runs on Ollama's servers**, not yours. Do not put one in `LLM_MODEL` if
+> local-only is the point.
+
+**`LLM_PROVIDER=mock`** swaps the call for local keyword matching (PT and EN). It
+exists so the whole chain can be tested in CI with no daemon and no key. It is a
+test aid, not a fallback: it understands a handful of keywords, not language.
 
 ### `frontend/.env.local`
 
@@ -222,7 +251,7 @@ the ranking auditable, which is most of the point of a PoC demo.
 ### `GET /health`
 
 ```json
-{ "status": "ok", "provider": "anthropic" }
+{ "status": "ok", "provider": "ollama" }
 ```
 
 ---
@@ -287,7 +316,7 @@ source .venv/bin/activate
 pytest
 ```
 
-23 tests covering the scoring rules, the extraction contract, and the HTTP
+27 tests covering the scoring rules, the extraction contract, and the HTTP
 endpoint. The suite runs offline: `tests/conftest.py` forces `LLM_PROVIDER=mock`
 and points the database at a temp directory, so no API key is needed and the
 seeded `data/travel.db` is never touched.

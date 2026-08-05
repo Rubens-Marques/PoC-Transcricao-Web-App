@@ -11,8 +11,12 @@ Two parts:
   models move from an external API to local models — Whisper for transcription
   and a small local LLM for data extraction.
 
-Part II is **design, not implementation**. The version 1 spec explicitly forbids
-local models; nothing in Part II is present in the codebase.
+> **Current status (updated).** Phase 2 of Part II — extraction on a local model
+> — **is now implemented and is the project default**: `qwen2.5:3b` via Ollama,
+> selected with `LLM_PROVIDER=ollama`. This diverges from the version 1 spec,
+> which forbade local models, by a later explicit decision. The rest of Part II
+> (Phase 1, local Whisper; Phase 3, in-browser model) remains design, not
+> implementation. See §10 for per-phase status.
 
 ---
 
@@ -822,10 +826,31 @@ latency. Without this, every later comparison is anecdote.
 highest-value change: it fixes Firefox/Safari, removes the audio transfer to
 Google, and does not touch the backend at all.
 
-**Phase 2 — Local extraction behind a flag.** Add `LLM_PROVIDER=ollama` beside
-`anthropic` and `mock`, reusing `PREFERENCES_SCHEMA` and `SYSTEM_PROMPT`
-unchanged. Run it against the evaluation set. Decide on the numbers, especially
-the inversion count.
+**Phase 2 — Local extraction. ✅ DONE, and it is the default.**
+`LLM_PROVIDER=ollama` runs beside `anthropic` and `mock`, with `qwen2.5:3b`
+(1.9 GB) on the local machine.
+
+What the implementation confirmed, and what it corrected in this document's
+prediction:
+
+- **Confirmed:** the contract survives the swap. `PREFERENCES_SCHEMA` is sent
+  unchanged, now via `format=`, and the
+  `TravelPreferences.model_validate_json(...)` line is identical. Constrained
+  decoding delivers the same schema guarantee as the hosted API.
+- **Confirmed:** the failures predicted in §7.7 happened, nearly all of them —
+  category words leaking into `destination`, wrong budget band, seasons read as
+  northern hemisphere, and `travelers` invented as 1.
+- **Corrected:** `SYSTEM_PROMPT` did **not** survive unchanged. It needed an
+  `OLLAMA_SYSTEM_PROMPT` extending the base with explicit rules and three worked
+  examples. This document predicted a swap of "roughly twenty lines"; it was
+  twenty lines of code and about thirty of prompt.
+- **Better than predicted:** negation did not invert. "não quero praia, prefiro
+  montanha" returned `nature`, not `beach` — §7.7's most dangerous failure mode
+  did not materialise in the cases tested.
+
+Median latency 1.3s against the ~1–3s estimate. Per-field accuracy 100% on a
+9-sentence set — an optimistic number, because the prompt was tuned on some of
+those sentences. Phase 0's independent evaluation set is still outstanding.
 
 **Phase 3 — Only if fully-offline is a requirement.** Move extraction into the
 browser with WebLLM, add the `{ preferences }` endpoint, keep the `{ text }`

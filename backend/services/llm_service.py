@@ -1,9 +1,15 @@
 """Natural language -> TravelPreferences.
 
 The LLM here is a parser, not a conversationalist: it receives one sentence and
-returns one JSON object matching PREFERENCES_SCHEMA. Schema conformance is
-enforced server-side by the Messages API (`output_config.format`), so the
-response never needs repair prompting.
+returns one JSON object matching PREFERENCES_SCHEMA.
+
+Every provider constrains generation with the same JSON Schema, so none of them
+ever needs repair prompting:
+
+- `ollama`    — a small instruct model on the local machine. The default.
+                Constrained decoding via `format=<schema>`. Nothing leaves the host.
+- `anthropic` — the hosted Messages API, via `output_config.format`.
+- `mock`      — keyword matching, for offline tests. Not a fallback.
 """
 
 from __future__ import annotations
@@ -14,13 +20,19 @@ import re
 from functools import lru_cache
 from typing import get_args
 
+import ollama
 from anthropic import APIError, AsyncAnthropic
 
 from models.travel import BudgetLevel, Month, TravelCategory, TravelPreferences
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = "claude-opus-5"
+DEFAULT_PROVIDER = "ollama"
+DEFAULT_ANTHROPIC_MODEL = "claude-opus-5"
+DEFAULT_OLLAMA_MODEL = "qwen2.5:3b"
+DEFAULT_OLLAMA_HOST = "http://localhost:11434"
+
+SUPPORTED_PROVIDERS = ("ollama", "anthropic", "mock")
 
 CATEGORIES: list[str] = list(get_args(TravelCategory))
 MONTHS: list[str] = list(get_args(Month))
@@ -90,6 +102,50 @@ medium, above 6000 is high.
 - `destination` is the place name only, without the country ("Gramado", not \
 "Gramado, Brazil")."""
 
+# A 3B model needs the rules spelled out where a frontier model infers them.
+# Every addition below fixes a failure observed on qwen2.5:3b with the base
+# prompt: category words leaking into `destination`, budget bands applied by
+# vibe instead of arithmetic, southern-hemisphere seasons read as northern, and
+# `travelers` defaulting to 1 when nobody was mentioned. The worked examples
+# matter more than the prose — small models copy patterns better than they
+# follow instructions.
+OLLAMA_SYSTEM_PROMPT = (
+    SYSTEM_PROMPT
+    + """
+- `destination` must be a PROPER NOUN naming a real city or region ("Gramado",
+"Natal", "Patagonia"). A kind of place is NOT a destination: "praia", "beach",
+"montanha", "mountains", "campo" all mean destination is null — they only set
+`category`.
+- `travelers` is null unless the speaker mentions who is going. Never default to
+1. Use 1 only for an explicit "alone" / "sozinho".
+- When counting `travelers`, ALWAYS add the speaker to the people they name. Do
+the sum explicitly: "com minha esposa" = 1 speaker + 1 wife = 2. "com minha
+esposa e dois filhos" = 1 + 1 + 2 = 4. "eu e mais três amigos" = 1 + 3 = 4.
+- Seasons are SOUTHERN hemisphere (Brazil): "verão"/"summer" is December-February,
+"inverno"/"winter" is June-August, "outono" is March-May, "primavera" is
+September-November. Pick the middle month when only a season is named.
+- `budget_level` from an amount is arithmetic, not opinion: below 3000 is "low",
+3000 to 6000 inclusive is "medium", above 6000 is "high". 5000 is "medium".
+- If the speaker says they do NOT want something ("não quero praia", "anything
+but the beach"), leave that field null. Never fill it with the rejected value.
+
+Worked examples:
+
+"Quero uma praia em dezembro com minha esposa, uns 5000 reais"
+{"destination":null,"category":"beach","month":"December","travelers":2,\
+"budget_level":"medium","max_budget":5000}
+
+"Quero conhecer Gramado no inverno"
+{"destination":"Gramado","category":"cold","month":"July","travelers":null,\
+"budget_level":null,"max_budget":null}
+
+"quero ir pra algum lugar"
+{"destination":null,"category":null,"month":null,"travelers":null,\
+"budget_level":null,"max_budget":null}
+
+Reply only with a JSON object matching the schema. No prose, no code fences."""
+)
+
 
 @lru_cache(maxsize=1)
 def _anthropic_client() -> AsyncAnthropic:
@@ -97,28 +153,81 @@ def _anthropic_client() -> AsyncAnthropic:
     if not api_key:
         raise LLMConfigurationError(
             "LLM_API_KEY is not set. Copy backend/.env.example to backend/.env and "
-            "fill it in, or set LLM_PROVIDER=mock to run without a key."
+            "fill it in, or set LLM_PROVIDER=ollama to run a local model instead."
         )
     return AsyncAnthropic(api_key=api_key)
 
 
+@lru_cache(maxsize=1)
+def _ollama_client() -> ollama.AsyncClient:
+    return ollama.AsyncClient(host=os.environ.get("OLLAMA_HOST", DEFAULT_OLLAMA_HOST))
+
+
 async def extract_travel_preferences(text: str) -> TravelPreferences:
     """Turn one natural-language sentence into structured preferences."""
-    provider = os.environ.get("LLM_PROVIDER", "anthropic").strip().lower()
+    provider = os.environ.get("LLM_PROVIDER", DEFAULT_PROVIDER).strip().lower()
 
+    if provider == "ollama":
+        return await _extract_with_ollama(text)
     if provider == "mock":
         return _extract_with_mock(text)
     if provider == "anthropic":
         return await _extract_with_anthropic(text)
 
     raise LLMConfigurationError(
-        f"Unsupported LLM_PROVIDER {provider!r}. Expected 'anthropic' or 'mock'."
+        f"Unsupported LLM_PROVIDER {provider!r}. "
+        f"Expected one of: {', '.join(SUPPORTED_PROVIDERS)}."
     )
+
+
+async def _extract_with_ollama(text: str) -> TravelPreferences:
+    """Run the extraction on a locally hosted model.
+
+    `format=PREFERENCES_SCHEMA` makes Ollama restrict token sampling to what the
+    schema permits, which is what makes a 3B model usable here: the output cannot
+    be malformed JSON or an invented enum value. Only the *semantics* can be
+    wrong — see DOCUMENTACAO.md §7.7.
+    """
+    client = _ollama_client()
+    model = os.environ.get("LLM_MODEL", DEFAULT_OLLAMA_MODEL)
+
+    try:
+        response = await client.chat(
+            model=model,
+            messages=[
+                {"role": "system", "content": OLLAMA_SYSTEM_PROMPT},
+                {"role": "user", "content": text},
+            ],
+            format=PREFERENCES_SCHEMA,
+            # Extraction must be reproducible: the same sentence has to yield the
+            # same fields on every run, or the demo looks unreliable.
+            options={"temperature": 0.0, "num_predict": 256},
+        )
+    except ollama.ResponseError as exc:
+        if exc.status_code == 404:
+            raise LLMConfigurationError(
+                f"Ollama has no model named {model!r}. Run: ollama pull {model}"
+            ) from exc
+        logger.exception("Ollama request failed")
+        raise LLMExtractionError(f"Local model request failed: {exc}") from exc
+    except (ConnectionError, OSError) as exc:
+        # httpx.ConnectError subclasses OSError; treat an unreachable daemon as a
+        # misconfigured deployment (503), not a bad model answer (502).
+        raise LLMConfigurationError(
+            f"Cannot reach Ollama at {os.environ.get('OLLAMA_HOST', DEFAULT_OLLAMA_HOST)}. "
+            "Start it with: ollama serve"
+        ) from exc
+
+    payload = response.message.content
+    if not payload:
+        raise LLMExtractionError("Local model returned an empty response.")
+
+    return TravelPreferences.model_validate_json(payload)
 
 
 async def _extract_with_anthropic(text: str) -> TravelPreferences:
     client = _anthropic_client()
-    model = os.environ.get("LLM_MODEL", DEFAULT_MODEL)
+    model = os.environ.get("LLM_MODEL", DEFAULT_ANTHROPIC_MODEL)
 
     try:
         response = await client.messages.create(

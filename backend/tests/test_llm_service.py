@@ -10,8 +10,13 @@ import pytest
 
 from models.travel import TravelPreferences
 from services.llm_service import (
+    DEFAULT_PROVIDER,
+    OLLAMA_SYSTEM_PROMPT,
     PREFERENCES_SCHEMA,
+    SUPPORTED_PROVIDERS,
+    SYSTEM_PROMPT,
     LLMConfigurationError,
+    _ollama_client,
     extract_travel_preferences,
 )
 
@@ -78,6 +83,42 @@ async def test_unknown_provider_is_rejected(
     # Act / Assert
     with pytest.raises(LLMConfigurationError, match="Unsupported LLM_PROVIDER"):
         await extract_travel_preferences("beach in December")
+
+
+def test_local_model_is_the_default_provider() -> None:
+    # Arrange / Act / Assert: the PoC must not reach the network unless asked to.
+    assert DEFAULT_PROVIDER == "ollama"
+    assert "ollama" in SUPPORTED_PROVIDERS
+
+
+@pytest.mark.anyio
+async def test_unreachable_ollama_is_a_configuration_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Arrange: port 1 is reserved and never listening, so this fails instantly.
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setenv("OLLAMA_HOST", "http://127.0.0.1:1")
+    _ollama_client.cache_clear()
+
+    # Act / Assert: a dead daemon is a 503 (operator problem), not a 502.
+    with pytest.raises(LLMConfigurationError, match="Cannot reach Ollama"):
+        await extract_travel_preferences("praia em janeiro")
+
+    _ollama_client.cache_clear()
+
+
+def test_local_prompt_extends_the_shared_one() -> None:
+    # Arrange / Act / Assert: the small model gets extra rules, never fewer.
+    assert OLLAMA_SYSTEM_PROMPT.startswith(SYSTEM_PROMPT)
+    assert len(OLLAMA_SYSTEM_PROMPT) > len(SYSTEM_PROMPT)
+
+
+def test_local_prompt_covers_the_observed_failure_modes() -> None:
+    # Arrange: each rule below was added after qwen2.5:3b got that case wrong.
+    # If someone trims the prompt, this says which behaviour they are giving up.
+    for rule in ("PROPER NOUN", "Never default to", "SOUTHERN", '5000 is "medium"'):
+        # Act / Assert
+        assert rule in OLLAMA_SYSTEM_PROMPT, f"missing guard: {rule}"
 
 
 def test_schema_requires_every_field_and_forbids_extras() -> None:

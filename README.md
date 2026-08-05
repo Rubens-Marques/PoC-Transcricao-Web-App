@@ -14,11 +14,20 @@ Voz → Texto → LLM → Dados Estruturados → Busca no Banco → Recomendaç�
 - **Voz para texto** acontece no browser, via Web Speech API. Nenhum áudio chega
   a este backend. (Vale notar que a implementação do Chrome ainda envia o áudio
   para os servidores de reconhecimento do próprio Google — ver
-  [DOCUMENTACAO.md](DOCUMENTACAO.md) §6.1.)
-- **O LLM** é usado estritamente como parser: entra uma frase, sai um objeto
-  JSON. Ele nunca conversa.
+  [DOCUMENTACAO.md](DOCUMENTACAO.md) §6.1. É a única etapa da cadeia que ainda
+  sai da máquina.)
+- **O LLM** roda **localmente** por padrão: `qwen2.5:3b` via Ollama, ~1,9 GB em
+  disco. Ele é usado estritamente como parser — entra uma frase, sai um objeto
+  JSON — e nunca conversa. A API hospedada da Anthropic continua disponível
+  trocando uma variável de ambiente.
 - **A busca** é pontuação determinística por pesos sobre uma tabela SQLite. Sem
   aprendizado, sem embeddings.
+
+> **Sigilo.** Com `LLM_PROVIDER=ollama`, o texto transcrito não sai desta
+> máquina: nem a frase, nem as preferências extraídas, nem o catálogo. O áudio
+> ainda vai para o Google enquanto a transcrição usar a Web Speech API — fechar
+> essa última brecha exige Whisper local, descrito em
+> [DOCUMENTACAO.md](DOCUMENTACAO.md) §6.
 
 > **[DOCUMENTACAO.md](DOCUMENTACAO.md)** (também em inglês:
 > **[DOCUMENTATION.en.md](DOCUMENTATION.en.md)**) — o registro completo de decisões de
@@ -64,7 +73,7 @@ Voz → Texto → LLM → Dados Estruturados → Busca no Banco → Recomendaç�
 | Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4   |
 | Backend  | FastAPI, Pydantic v2                                             |
 | Banco    | SQLite                                                           |
-| IA       | Apenas API externa (Anthropic Messages API). Sem modelos locais. |
+| IA       | `qwen2.5:3b` local via Ollama (padrão) ou Anthropic Messages API |
 
 ---
 
@@ -99,9 +108,23 @@ POC/
 
 ## Setup
 
-Pré-requisitos: **Python 3.11+** e **Node.js 20+**.
+Pré-requisitos: **Python 3.11+**, **Node.js 20+** e **Ollama**.
 
-### 1. Backend
+### 1. Modelo local
+
+```bash
+brew install ollama          # ou https://ollama.com/download
+ollama serve &               # deixa o daemon no ar em localhost:11434
+ollama pull qwen2.5:3b       # ~1,9 GB, baixado uma vez
+```
+
+Para deixar o daemon subindo junto com o login: `brew services start ollama`.
+
+Precisa de ~2,5 GB de RAM livre enquanto responde. Se sua máquina tiver folga,
+`qwen2.5:7b` erra menos em negação e contagem implícita — troque com
+`LLM_MODEL=qwen2.5:7b`.
+
+### 2. Backend
 
 ```bash
 cd backend
@@ -118,9 +141,9 @@ uvicorn main:app --reload
 A API escuta em <http://localhost:8000>. Documentação interativa em
 <http://localhost:8000/docs>.
 
-### 2. Frontend
+### 3. Frontend
 
-Em um segundo terminal:
+Em um terceiro terminal:
 
 ```bash
 cd frontend
@@ -140,21 +163,39 @@ os templates `.example` são commitados.
 
 ### `backend/.env`
 
-| Variável        | Obrigatória | Padrão                   | Observações                                      |
-| --------------- | ----------- | ------------------------ | ------------------------------------------------ |
-| `LLM_PROVIDER`  | não         | `anthropic`              | `anthropic` ou `mock`                            |
-| `LLM_API_KEY`   | sim¹        | —                        | Chave de API do provider                         |
-| `LLM_MODEL`     | não         | `claude-opus-5`          | Qualquer modelo com suporte a structured outputs |
-| `CORS_ORIGINS`  | não         | `http://localhost:3000`  | Separadas por vírgula                            |
-| `DATABASE_PATH` | não         | `backend/data/travel.db` |                                                  |
-| `LOG_LEVEL`     | não         | `INFO`                   |                                                  |
+| Variável        | Obrigatória | Padrão                   | Observações                            |
+| --------------- | ----------- | ------------------------ | -------------------------------------- |
+| `LLM_PROVIDER`  | não         | `ollama`                 | `ollama`, `anthropic` ou `mock`        |
+| `OLLAMA_HOST`   | não         | `http://localhost:11434` | Onde o daemon do Ollama escuta         |
+| `LLM_API_KEY`   | sim¹        | —                        | Chave da API, só para `anthropic`      |
+| `LLM_MODEL`     | não         | conforme o provider²     | Sobrescreve o modelo do provider ativo |
+| `CORS_ORIGINS`  | não         | `http://localhost:3000`  | Separadas por vírgula                  |
+| `DATABASE_PATH` | não         | `backend/data/travel.db` |                                        |
+| `LOG_LEVEL`     | não         | `INFO`                   |                                        |
 
 ¹ Obrigatória apenas quando `LLM_PROVIDER=anthropic`.
+² `qwen2.5:3b` para `ollama`, `claude-opus-5` para `anthropic`.
 
-**`LLM_PROVIDER=mock`** troca a chamada de API por casamento de palavras-chave
-local (PT e EN). Existe para que a cadeia inteira possa ser demonstrada — e
-testada em CI — sem uma chave. É apoio de demonstração, não fallback: entende um
-punhado de palavras-chave, não linguagem.
+Os três providers valem a pena distinguir:
+
+| Provider    | Onde roda     | Os dados saem da máquina? |
+| ----------- | ------------- | ------------------------- |
+| `ollama`    | Sua máquina   | **Não**                   |
+| `anthropic` | API hospedada | Sim                       |
+| `mock`      | Sua máquina   | **Não**                   |
+
+**`LLM_PROVIDER=ollama`** é o padrão. Constrained decoding via `format=<schema>`
+garante que a saída obedeça ao JSON Schema — a mesma garantia que a API
+hospedada dá. Um modelo de 3B só consegue ser usado aqui por causa disso.
+
+> ⚠️ Um modelo do Ollama cujo nome termina em `-cloud` (ex.: `qwen3.5:397b-cloud`)
+> **roda nos servidores da Ollama**, não na sua máquina. Não use um deles em
+> `LLM_MODEL` se o ponto for manter os dados locais.
+
+**`LLM_PROVIDER=mock`** troca a chamada por casamento de palavras-chave local
+(PT e EN). Existe para que a cadeia inteira possa ser testada em CI sem daemon e
+sem chave. É apoio de teste, não fallback: entende um punhado de palavras-chave,
+não linguagem.
 
 ### `frontend/.env.local`
 
@@ -227,17 +268,26 @@ ranking auditável, que é boa parte do propósito de uma demonstração de PoC.
 ### `GET /health`
 
 ```json
-{ "status": "ok", "provider": "anthropic" }
+{ "status": "ok", "provider": "ollama" }
 ```
 
 ---
 
 ## Como funciona a extração
 
-`extract_travel_preferences(text)` envia a frase para a Messages API com um JSON
-Schema anexado via `output_config.format`. A conformidade com o schema é garantida
-server-side, então a resposta é sempre JSON válido no formato esperado — não há
-prompt de reparo nem adivinhação com `try: json.loads()`.
+`extract_travel_preferences(text)` manda a frase para o provider ativo com o
+**mesmo JSON Schema** anexado, seja qual for o provider:
+
+| Provider    | Como o schema é imposto     |
+| ----------- | --------------------------- |
+| `ollama`    | `format=PREFERENCES_SCHEMA` |
+| `anthropic` | `output_config.format`      |
+
+Nos dois casos a restrição acontece durante a geração, então a resposta é sempre
+JSON válido no formato esperado — não há prompt de reparo nem adivinhação com
+`try: json.loads()`. É isso que torna um modelo de 3B utilizável aqui: ele não
+consegue emitir JSON malformado nem um valor de enum inventado. Só a _semântica_
+pode sair errada.
 
 O modelo é instruído a aceitar entrada em português ou inglês e sempre emitir os
 tokens canônicos em inglês que o schema define.
@@ -293,10 +343,14 @@ source .venv/bin/activate
 pytest
 ```
 
-23 testes cobrindo as regras de pontuação, o contrato de extração e o endpoint
+27 testes cobrindo as regras de pontuação, o contrato de extração e o endpoint
 HTTP. A suíte roda offline: `tests/conftest.py` força `LLM_PROVIDER=mock` e aponta
-o banco para um diretório temporário, então nenhuma chave de API é necessária e o
-`data/travel.db` populado nunca é tocado.
+o banco para um diretório temporário, então nem chave de API nem daemon do Ollama
+são necessários, e o `data/travel.db` populado nunca é tocado.
+
+Os testes verificam o _contrato_ da extração, não a qualidade do modelo — isso
+nenhum teste unitário consegue afirmar. Para medir qualidade, ver a seção de
+avaliação em [DOCUMENTACAO.md](DOCUMENTACAO.md) §7.7.
 
 Verificação de tipos do frontend:
 
@@ -341,7 +395,22 @@ Deliberadas, para uma versão 1:
   problemas de toolchain de build, sem exposição em runtime para uma PoC local;
   somem quando o Next publicar um bundle atualizado.
 
-Explicitamente fora de escopo, conforme o spec: modelos de IA locais (Whisper,
-Ollama, Qwen, Llama), apps mobile e Electron. Uma versão futura pode substituir a
-Speech API do browser por Whisper local + WebGPU — esta versão fica simples de
-propósito.
+### Sobre a qualidade do modelo local
+
+Um modelo de 3B erra em inferências que exigem conhecimento de mundo. O prompt em
+`OLLAMA_SYSTEM_PROMPT` corrige por escrito cada falha observada — nomes de
+categoria vazando para `destination`, faixas de orçamento aplicadas por
+impressão em vez de aritmética, estações lidas como hemisfério norte, e
+`travelers` defaultando para 1 sem ninguém ter sido mencionado.
+
+Num conjunto de 9 frases em PT e EN, a acurácia por campo foi de **100%**, com
+latência mediana de **1,3s**. Esse número é otimista: o prompt foi ajustado
+olhando parte dessas mesmas frases, então não é um conjunto held-out. Antes de
+confiar nele em produção, monte um conjunto de avaliação independente conforme
+[DOCUMENTACAO.md](DOCUMENTACAO.md) §7.7.
+
+### Ainda fora de escopo
+
+Apps mobile e Electron. E a transcrição continua na Web Speech API do browser —
+substituí-la por Whisper local + WebGPU é o passo que falta para a cadeia inteira
+rodar sem sair da máquina, descrito em [DOCUMENTACAO.md](DOCUMENTACAO.md) §6.
