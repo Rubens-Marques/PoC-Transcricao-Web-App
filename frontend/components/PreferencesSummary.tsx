@@ -25,7 +25,12 @@ export function PreferencesSummary({ preferences }: PreferencesSummaryProps) {
     entries.push(["Category", preferences.category]);
   }
   if (preferences.month) {
-    entries.push(["Month", preferences.month]);
+    // Quando veio de uma estação, o mês foi derivado do hemisfério do país.
+    // Mostrar os dois explica de onde saiu o mês.
+    const label = preferences.season
+      ? `${preferences.month} (${preferences.season})`
+      : preferences.month;
+    entries.push(["Month", label]);
   }
   if (preferences.travelers) {
     entries.push(["Travelers", String(preferences.travelers)]);

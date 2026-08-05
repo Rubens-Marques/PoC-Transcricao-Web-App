@@ -119,7 +119,8 @@ def test_local_prompt_covers_the_observed_failure_modes() -> None:
     for rule in (
         "PROPER NOUN",
         "Never default to",
-        "HEMISPHERE",  # catálogo é global: verão em Portugal != verão no Brasil
+        # Estação nunca vira mês no modelo — services/season.py faz isso.
+        "NEVER convert a season into a month",
         "A COUNTRY never goes in `destination`",
         '5000 is "medium"',
     ):

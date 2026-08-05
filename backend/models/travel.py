@@ -15,6 +15,8 @@ TravelCategory = Literal[
 
 BudgetLevel = Literal["low", "medium", "high"]
 
+Season = Literal["summer", "autumn", "winter", "spring"]
+
 Month = Literal[
     "January",
     "February",
@@ -42,6 +44,10 @@ class TravelPreferences(BaseModel):
     country: str | None = None
     category: TravelCategory | None = None
     month: Month | None = None
+    # Uma estação só vira mês depois de saber o hemisfério do destino, e essa
+    # inferência condicional é justamente o que um modelo de 3B erra. O modelo
+    # extrai o fato bruto; `resolve_season` faz a conta.
+    season: Season | None = None
     travelers: int | None = None
     budget_level: BudgetLevel | None = None
     max_budget: float | None = None

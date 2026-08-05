@@ -5,6 +5,8 @@ export type TravelCategory =
 
 export type BudgetLevel = "low" | "medium" | "high";
 
+export type Season = "summer" | "autumn" | "winter" | "spring";
+
 export type Month =
   | "January"
   | "February"
@@ -24,6 +26,7 @@ export interface TravelPreferences {
   country: string | null;
   category: TravelCategory | null;
   month: Month | null;
+  season: Season | null;
   travelers: number | null;
   budget_level: BudgetLevel | null;
   max_budget: number | null;

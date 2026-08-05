@@ -23,7 +23,14 @@ from typing import get_args
 import ollama
 from anthropic import APIError, AsyncAnthropic
 
-from models.travel import BudgetLevel, Month, TravelCategory, TravelPreferences
+from models.travel import (
+    BudgetLevel,
+    Month,
+    Season,
+    TravelCategory,
+    TravelPreferences,
+)
+from services.season import resolve_season
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +44,7 @@ SUPPORTED_PROVIDERS = ("ollama", "anthropic", "mock")
 CATEGORIES: list[str] = list(get_args(TravelCategory))
 MONTHS: list[str] = list(get_args(Month))
 BUDGET_LEVELS: list[str] = list(get_args(BudgetLevel))
+SEASONS: list[str] = list(get_args(Season))
 
 
 class LLMConfigurationError(RuntimeError):
@@ -67,6 +75,7 @@ PREFERENCES_SCHEMA: dict[str, object] = {
         ),
         "category": _nullable({"type": "string", "enum": CATEGORIES}),
         "month": _nullable({"type": "string", "enum": MONTHS}),
+        "season": _nullable({"type": "string", "enum": SEASONS}),
         "travelers": _nullable(
             {
                 "type": "integer",
@@ -83,6 +92,7 @@ PREFERENCES_SCHEMA: dict[str, object] = {
         "country",
         "category",
         "month",
+        "season",
         "travelers",
         "budget_level",
         "max_budget",
@@ -136,15 +146,13 @@ never drop it.
 - When counting `travelers`, ALWAYS add the speaker to the people they name. Do
 the sum explicitly: "com minha esposa" = 1 speaker + 1 wife = 2. "com minha
 esposa e dois filhos" = 1 + 1 + 2 = 4. "eu e mais três amigos" = 1 + 3 = 4.
-- Seasons depend on the HEMISPHERE of the place being discussed. Pick the middle
-month of the season.
-  - Southern (Brazil, Argentina, Chile, Peru, Australia): "verão"/"summer" is
-    December-February, "inverno"/"winter" is June-August.
-  - Northern (Italy, France, Spain, Portugal, Japan, United States, Europe in
-    general): "verão"/"summer" is June-August, "inverno"/"winter" is
-    December-February.
-  - If no place was named, assume southern — the speaker is Brazilian.
-  - "verão em Portugal" -> July. "verão no Brasil" -> January.
+- NEVER convert a season into a month. If the speaker named a season, set
+`season` and leave `month` null. If they named a month, set `month` and leave
+`season` null. The application resolves seasons itself, because the answer
+depends on the hemisphere.
+  - "no verão" -> season "summer", month null
+  - "em julho" -> month "July", season null
+  - "no inverno europeu" -> season "winter", month null
 - `budget_level` from an amount is arithmetic, not opinion: below 3000 is "low",
 3000 to 6000 inclusive is "medium", above 6000 is "high". 5000 is "medium".
 - If the speaker says they do NOT want something ("não quero praia", "anything
@@ -154,23 +162,27 @@ Worked examples:
 
 "Quero uma praia em dezembro com minha esposa, uns 5000 reais"
 {"destination":null,"country":null,"category":"beach","month":"December",\
-"travelers":2,"budget_level":"medium","max_budget":5000}
+"season":null,"travelers":2,"budget_level":"medium","max_budget":5000}
 
 "Quero conhecer Gramado no inverno"
-{"destination":"Gramado","country":null,"category":"cold","month":"July",\
-"travelers":null,"budget_level":null,"max_budget":null}
+{"destination":"Gramado","country":null,"category":"cold","month":null,\
+"season":"winter","travelers":null,"budget_level":null,"max_budget":null}
 
 "I want to go to Italy with my wife"
 {"destination":null,"country":"Italy","category":null,"month":null,\
-"travelers":2,"budget_level":null,"max_budget":null}
+"season":null,"travelers":2,"budget_level":null,"max_budget":null}
 
 "quero passar uma semana em Roma, na Itália"
 {"destination":"Rome","country":"Italy","category":null,"month":null,\
-"travelers":null,"budget_level":null,"max_budget":null}
+"season":null,"travelers":null,"budget_level":null,"max_budget":null}
+
+"verão em Portugal"
+{"destination":null,"country":"Portugal","category":null,"month":null,\
+"season":"summer","travelers":null,"budget_level":null,"max_budget":null}
 
 "quero ir pra algum lugar"
 {"destination":null,"country":null,"category":null,"month":null,\
-"travelers":null,"budget_level":null,"max_budget":null}
+"season":null,"travelers":null,"budget_level":null,"max_budget":null}
 
 Reply only with a JSON object matching the schema. No prose, no code fences."""
 )
@@ -197,16 +209,21 @@ async def extract_travel_preferences(text: str) -> TravelPreferences:
     provider = os.environ.get("LLM_PROVIDER", DEFAULT_PROVIDER).strip().lower()
 
     if provider == "ollama":
-        return await _extract_with_ollama(text)
-    if provider == "mock":
-        return _extract_with_mock(text)
-    if provider == "anthropic":
-        return await _extract_with_anthropic(text)
+        extracted = await _extract_with_ollama(text)
+    elif provider == "mock":
+        extracted = _extract_with_mock(text)
+    elif provider == "anthropic":
+        extracted = await _extract_with_anthropic(text)
+    else:
+        raise LLMConfigurationError(
+            f"Unsupported LLM_PROVIDER {provider!r}. "
+            f"Expected one of: {', '.join(SUPPORTED_PROVIDERS)}."
+        )
 
-    raise LLMConfigurationError(
-        f"Unsupported LLM_PROVIDER {provider!r}. "
-        f"Expected one of: {', '.join(SUPPORTED_PROVIDERS)}."
-    )
+    # Estação -> mês é decidido aqui, não pelo modelo: depende do hemisfério do
+    # país, e é uma inferência condicional que modelo pequeno erra. Aplicado no
+    # dispatch para valer igual nos três providers.
+    return resolve_season(extracted)
 
 
 async def _extract_with_ollama(text: str) -> TravelPreferences:
@@ -313,6 +330,13 @@ _MONTH_KEYWORDS: dict[str, tuple[str, ...]] = {
     "December": ("december", "dezembro"),
 }
 
+_SEASON_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "summer": ("summer", "verao"),
+    "autumn": ("autumn", "fall", "outono"),
+    "winter": ("winter", "inverno"),
+    "spring": ("spring", "primavera"),
+}
+
 _LOW_BUDGET_WORDS = ("cheap", "barato", "economico", "budget")
 _HIGH_BUDGET_WORDS = ("luxury", "luxuoso", "premium", "sofisticado")
 
@@ -384,6 +408,19 @@ def _extract_with_mock(text: str) -> TravelPreferences:
             "destination": None,
             "country": country,
             "category": category,
+            # Só se nenhum mês explícito foi dito — mês vence estação.
+            "season": (
+                None
+                if month
+                else next(
+                    (
+                        name
+                        for name, words in _SEASON_KEYWORDS.items()
+                        if _contains(haystack, words)
+                    ),
+                    None,
+                )
+            ),
             "month": month,
             "travelers": travelers,
             "budget_level": budget_level,
