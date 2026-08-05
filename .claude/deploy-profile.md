@@ -1,129 +1,125 @@
 # Deploy profile — PoC Transcrição Web App
 
-> ⚠️ **NÃO DEPLOYADO AINDA.** Este perfil descreve um deploy planejado. Ler
-> "Pré-condições" antes de executar qualquer coisa.
+> **NO AR** desde 2026-08-05 em <https://poc.nexusdatabi.com>
 
 ## Identity
 
 - Repo: `PoC-Transcricao-Web-App` (github.com/Rubens-Marques)
-- Stack: Next.js 16 + FastAPI + SQLite + Ollama (`qwen2.5`)
-- Edge: `elabore-api-nginx-1` (o mesmo que já serve a produção do Elabore)
+- Stack: Next.js 16 + FastAPI + SQLite + Ollama (`qwen2.5:3b`)
+- Edge: **Cloudflare Tunnel** — não usa o nginx do Elabore
 
-## Alvo
+## Host
 
-- Host: `elabore-vps` (187.127.10.155), Ubuntu 24.04, Hostinger
-- Compose: `docker-compose.yml` (raiz do repo)
-- Domínio previsto: `poc.nexusdatabi.com` — **ainda não registrado**
+`elabore-vps` (187.127.10.155), Ubuntu 24.04, Hostinger.
+Diretório: `/home/deploy/poc-transcricao`, usuário `deploy` (uid **1001**).
 
-### Recursos medidos em 2026-08-05 (ANTES do upgrade)
+| Recurso | Valor (após upgrade de 2026-08-05)    |
+| ------- | ------------------------------------- |
+| CPU     | 4 vCPU (AMD EPYC 9354P)               |
+| RAM     | 15 GB · 4,1 GB em uso com a PoC no ar |
+| Swap    | **0 B** — pendência, ver "Riscos"     |
+| Disco   | 193 GB · 135 GB livres                |
+| GPU     | nenhuma                               |
 
-| Recurso | Antes                   | Depois do upgrade planejado |
-| ------- | ----------------------- | --------------------------- |
-| CPU     | 2 vCPU (AMD EPYC 9354P) | **a confirmar**             |
-| RAM     | 7,8 GB · 5,9 GB livre   | 16 GB                       |
-| Swap    | 0 B                     | 0 B (inalterado)            |
-| Disco   | 96 GB · 38 GB livres    | a confirmar                 |
-| GPU     | nenhuma                 | nenhuma                     |
+Coabita com a produção do Elabore (8 containers). **Nada do Elabore foi
+alterado neste deploy** — nem nginx, nem portas, nem certificados.
 
-**Re-medir depois do upgrade.** Se o plano da Hostinger que entrega 16 GB também
-dobrar as vCPUs, esse é o ganho maior — CPU é o que dita a latência, não RAM.
+## Edge — Cloudflare Tunnel
 
-### Já rodando no host (produção Elabore)
+| Item       | Valor                                                     |
+| ---------- | --------------------------------------------------------- |
+| Tunnel     | `poc-vps`                                                 |
+| UUID       | `2b194ee3-91de-4c13-8e34-f014153a45c8`                    |
+| Credencial | `.infra/cloudflared/<uuid>.json` (chmod 600, fora do git) |
+| DNS        | CNAME gerenciado pelo Cloudflare, proxied                 |
 
-`elabore-web` · `elabore-web-staging` · `elabore-api-rails-1` ·
-`elabore-api-jobs-1` · `elabore-api-postgres-1` · `elabore-api-nginx-1` ·
-`elabore-ia` · `elabore-ia-staging`
+O `cloudflared` roda como container no profile `edge`, na mesma rede do compose.
+As rotas apontam para **nomes de serviço** (`http://backend:8000`,
+`http://frontend:3000`) — dentro de um container, `localhost` é o próprio
+container.
 
-## Edge / TLS — como o host já funciona
+Consequências: nenhuma porta aberta no host, nenhum certbot, o TLS vem do
+Cloudflare (o que satisfaz o contexto seguro exigido pelo microfone), e o IP de
+origem não fica exposto.
 
-`elabore-api-nginx-1` é dono de `0.0.0.0:80` e `0.0.0.0:443` e serve quatro
-subdomínios: `elaboreprovas`, `dev-rubens.elaboreprovas`, `elabore-api` e
-`elabore-ia`, todos sob `nexusdatabi.com`.
+## Containers
 
-| O quê        | Onde (host)                             | Montado no container     |
-| ------------ | --------------------------------------- | ------------------------ |
-| Configs      | `/home/deploy/elabore-api/.infra/nginx` | `/etc/nginx/conf.d` (ro) |
-| Certificados | `/etc/letsencrypt`                      | `/etc/letsencrypt` (ro)  |
-| Webroot ACME | `/var/www/certbot`                      | `/var/www/certbot` (ro)  |
+| Nome                            | Imagem                 | Limites           | Papel     |
+| ------------------------------- | ---------------------- | ----------------- | --------- |
+| `poc-transcricao-ollama-1`      | ollama/ollama:0.12.6   | 2 CPU / 6 GB      | LLM local |
+| `poc-transcricao-backend-1`     | build ./backend        | 0,5 CPU / 512 MB  | FastAPI   |
+| `poc-transcricao-frontend-1`    | build ./frontend       | 0,5 CPU / 512 MB  | Next.js   |
+| `poc-transcricao-cloudflared-1` | cloudflare/cloudflared | 0,25 CPU / 128 MB | Edge      |
 
-Adicionar a PoC é o mesmo padrão repetido uma quinta vez. O template está em
-`.infra/nginx/poc.conf.example` neste repo.
+Backend e frontend também publicam em `127.0.0.1:8001` e `127.0.0.1:3001`, para
+curl local. Ollama não publica porta: não tem autenticação.
 
-**Por que isso é menos arriscado do que parece:** `nginx -t` valida a config
-antes do reload. Config errada → o teste falha, o reload não acontece, a
-produção segue com a config antiga. Um server block novo para um `server_name`
-novo não altera os quatro existentes.
+## Números medidos (2026-08-05)
 
-## Pré-condições (nenhuma cumprida ainda)
+| Métrica                            | Valor                         |
+| ---------------------------------- | ----------------------------- |
+| Latência morna, ponta a ponta      | **mediana 7,2s** (6,7–9,0s)   |
+| Primeira request após restart      | **~64–70s** (carga do modelo) |
+| RAM do Ollama com modelo residente | 2,16 GB                       |
+| Acurácia da extração               | 5/5 nos casos testados        |
 
-1. [ ] Upgrade de RAM concluído e recursos re-medidos
-2. [ ] Registro DNS A: `poc.nexusdatabi.com` → 187.127.10.155
-3. [ ] Certificado emitido via certbot (webroot `/var/www/certbot`)
-4. [ ] Swapfile de 4 GB — barato, e remove a última chance de OOM
-5. [ ] Confirmação explícita do Rubens para mexer no host de produção
+Ponta a ponta = navegador → Cloudflare → tunnel → FastAPI → Ollama → SQLite.
+No Mac M-series com Metal a mesma extração leva 1,3s; a diferença é GPU.
 
-## Riscos remanescentes
-
-| Risco                              | Status após o upgrade                                                        |
-| ---------------------------------- | ---------------------------------------------------------------------------- |
-| OOM matando o Postgres             | **Muito reduzido** com 16 GB. Swapfile fecha de vez                          |
-| Contenção de CPU com o Elabore     | **Depende** do vCPU pós-upgrade. Limites do compose contêm, mas não eliminam |
-| Reload do nginx de produção        | **Baixo** — `nginx -t` valida antes                                          |
-| HTTPS obrigatório para o microfone | **Resolvido** pelo caminho de certbot acima                                  |
-
-## Modelo
-
-| Ambiente             | Modelo         | Latência                         |
-| -------------------- | -------------- | -------------------------------- |
-| Mac M-series (Metal) | `qwen2.5:3b`   | 1,3s mediana — **medido**        |
-| VPS 2 vCPU           | `qwen2.5:3b`   | 20s+ — **estimado, não medido**  |
-| VPS 2 vCPU           | `qwen2.5:1.5b` | 5–10s — **estimado, não medido** |
-| VPS 4 vCPU           | `qwen2.5:3b`   | 8–15s — **estimado, não medido** |
-
-O compose usa `qwen2.5:1.5b` por padrão. Com 4 vCPU, subir para `3b`:
-
-```bash
-LLM_MODEL=qwen2.5:3b OLLAMA_CPUS=2.0 OLLAMA_MEM=6g docker compose up -d
-```
-
-Nenhum número de VPS foi medido. A forma mais barata de medir sem tocar em
-produção é o túnel SSH descrito abaixo.
+`OLLAMA_KEEP_ALIVE=-1` mantém o modelo carregado (`ollama ps` mostra
+`UNTIL: Forever`), então os 70s só voltam a acontecer se o container reiniciar.
 
 ## Comandos
 
 ```bash
-# No host alvo, da raiz do repo:
-PUBLIC_ORIGIN=https://poc.nexusdatabi.com \
-PUBLIC_API_URL=https://poc.nexusdatabi.com/api \
-docker compose up -d --build
-
-# Primeira subida baixa o modelo:
-docker compose logs -f ollama-pull
-
-# Saúde:
-curl -s http://127.0.0.1:8001/health   # {"status":"ok","provider":"ollama"}
+ssh elabore-vps
+cd /home/deploy/poc-transcricao
+git pull --ff-only origin main
+docker compose --profile edge up -d --build     # lê .env automaticamente
 ```
 
-Portas ligadas apenas em `127.0.0.1` (8001 backend, 3001 frontend). O Ollama
-**não publica porta** — não tem autenticação, e expor a 11434 entrega compute
-para qualquer um que ache o IP.
-
-## Medir latência sem tocar em produção
+Saúde:
 
 ```bash
-ssh -L 11434:localhost:11434 elabore-vps   # túnel, sem porta aberta
-# noutro terminal, backend local apontando para a VPS:
-LLM_PROVIDER=ollama OLLAMA_HOST=http://localhost:11434 uvicorn main:app
+curl -s https://poc.nexusdatabi.com/health      # {"status":"ok","provider":"ollama"}
+docker compose exec ollama ollama ps            # UNTIL deve ser "Forever"
+docker compose logs cloudflared --tail 20
 ```
 
-Responde "quanto custa isso em CPU nesta máquina?" em minutos, sem nginx, sem
-container novo, sem risco ao Elabore.
+## Armadilhas encontradas neste deploy
+
+Todas custaram um ciclo de debug. Estão registradas para não se repetirem.
+
+1. **Variáveis inline não persistem.** Passar `LLM_MODEL=... docker compose up`
+   funciona naquela subida, mas um `up` posterior de um único serviço recria os
+   demais com os defaults do compose — foi assim que o modelo voltou de 3b para
+   1.5b sozinho. **Use sempre o `.env`** (ver `.env.deploy.example`).
+2. **`PUBLIC_API_URL` é só a origem, sem `/api`.** O `services/api.ts` já
+   concatena `/api/recommendations`. Com `/api` no fim vira `/api/api/...` e 404. É baked no build do frontend, então corrigir exige `--build`.
+3. **`cloudflared` precisa rodar como o dono da credencial.** A imagem tem um
+   usuário não-root próprio que não lê um arquivo em chmod 600 de outro uid —
+   entra em crash loop. `CLOUDFLARED_USER` no `.env` resolve sem afrouxar a
+   permissão. Aqui o valor é `1001:1001`.
+4. **`cloudflared tunnel route dns` ignora o nome do tunnel** se houver um
+   `config.yml` com `tunnel:` no diretório — usa o do arquivo. Passar o UUID e
+   `--config /dev/null` força o alvo certo.
+5. **O WAF do Cloudflare bloqueia POST com User-Agent não-browser** (403). Só
+   afeta scripts de teste, não o uso real. Use um UA de browser no curl.
+6. **`sudo` está bloqueado por hook** neste ambiente — por isso o cloudflared é
+   container em vez de pacote `.deb`.
+
+## Riscos remanescentes
+
+| Risco                             | Estado                                                                                                           |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Sem swap                          | **Aberto.** Com 15 GB e 4,1 GB em uso a folga é grande, mas 4 GB de swapfile ainda seriam baratos                |
+| Contenção de CPU com o Elabore    | Contido: Ollama limitado a 2 dos 4 vCPU. Durante inferência o Elabore ainda disputa                              |
+| Latência de 7s para uma UX de voz | **Aberto.** Aceitável para demo, ruim para produto. Alternativas: `qwen2.5:1.5b` (mais rápido, erra mais) ou GPU |
 
 ## Volumes
 
-| Volume          | Conteúdo                                     | Perda se apagado             |
-| --------------- | -------------------------------------------- | ---------------------------- |
-| `ollama-models` | Pesos do modelo (~1 GB no 1.5b, ~2 GB no 3b) | Re-download no próximo start |
+| Volume                          | Conteúdo                       | Perda se apagado             |
+| ------------------------------- | ------------------------------ | ---------------------------- |
+| `poc-transcricao_ollama-models` | Pesos do `qwen2.5:3b` (2,4 GB) | Re-download no próximo start |
 
-O SQLite é populado no build da imagem (`RUN python -m database.seed`) — é
-catálogo de demonstração, descartável, sem volume.
+SQLite é populado no build da imagem — catálogo de demonstração, descartável.
