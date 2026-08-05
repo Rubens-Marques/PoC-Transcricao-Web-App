@@ -1,0 +1,89 @@
+# PoC completa: Ollama + backend + frontend.
+#
+# LIMITES NÃO SÃO OPCIONAIS neste arquivo. O alvo previsto (elabore-vps) tem
+# 2 vCPU, 7,8 GB de RAM, ZERO swap e roda a produção do Elabore. Sem os limites
+# abaixo, uma inferência satura as duas CPUs e o OOM killer — sem swap para
+# amortecer — mata o processo mais gordo, que provavelmente é o Postgres.
+#
+# Nenhum serviço publica porta em 0.0.0.0. Tudo escuta em 127.0.0.1 e depende de
+# um proxy reverso na frente. O Ollama não publica porta nenhuma: ele não tem
+# autenticação, então só existe na rede interna do compose.
+
+name: poc-transcricao
+
+services:
+  ollama:
+    image: ollama/ollama:0.12.6
+    restart: unless-stopped
+    volumes:
+      - ollama-models:/root/.ollama
+    # Sem `ports:` de propósito. Ollama não tem auth — expor a 11434 entrega
+    # compute grátis para quem achar o IP.
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0" # deixa 1 vCPU livre para o Elabore
+          memory: 3g
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  # Baixa o modelo uma vez e sai. O volume persiste entre recreates, então em
+  # subidas seguintes o pull é no-op.
+  ollama-pull:
+    image: ollama/ollama:0.12.6
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      MODEL: ${LLM_MODEL:-qwen2.5:1.5b}
+    entrypoint: ["/bin/sh", "-c"]
+    command: ['ollama pull "$$MODEL"']
+    restart: "no"
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      LLM_PROVIDER: ollama
+      OLLAMA_HOST: http://ollama:11434
+      # 1.5b, não 3b: em 2 vCPU compartilhadas o 3b passa de 20s por request.
+      # Ver .claude/deploy-profile.md para o trade-off medido.
+      LLM_MODEL: ${LLM_MODEL:-qwen2.5:1.5b}
+      CORS_ORIGINS: ${PUBLIC_ORIGIN:-http://localhost:3001}
+      LOG_LEVEL: INFO
+    ports:
+      - "127.0.0.1:8001:8000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512m
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # URL que o NAVEGADOR usa — precisa ser a pública, não um host interno.
+        NEXT_PUBLIC_API_BASE_URL: ${PUBLIC_API_URL:-http://localhost:8001}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:3001:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512m
+
+volumes:
+  ollama-models:
