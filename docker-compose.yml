@@ -93,6 +93,11 @@ services:
     image: cloudflare/cloudflared:latest
     profiles: ["edge"]
     restart: unless-stopped
+    # Roda como o dono do arquivo de credencial no host, para que ele possa
+    # continuar em chmod 600. A imagem tem um usuário não-root próprio, que não
+    # consegue ler um 600 de outro uid — afrouxar para 644 exporia a credencial
+    # a qualquer usuário do host.
+    user: "${CLOUDFLARED_USER:-1000:1000}"
     command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
     volumes:
       - ./.infra/cloudflared:/etc/cloudflared:ro
