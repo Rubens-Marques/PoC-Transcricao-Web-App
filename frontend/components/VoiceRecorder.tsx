@@ -117,6 +117,7 @@ export function VoiceRecorder({ onSearch, isSearching }: VoiceRecorderProps) {
           rows={3}
           placeholder={EXAMPLES[lang]}
           className="field mt-3 min-h-24 resize-y py-4"
+          maxLength={1000}
         />
         <p className="mt-3 text-lg text-muted">
           O navegador escreve o que você fala. Pode editar ou digitar direto.

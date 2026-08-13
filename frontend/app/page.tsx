@@ -8,7 +8,12 @@ import { BrandMark } from "@/components/BrandMark";
 import { PreferencesSummary } from "@/components/PreferencesSummary";
 import { ResultsList } from "@/components/ResultsList";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
-import { clearProfile, loadProfile, type TravelyProfile } from "@/lib/profile";
+import {
+  clearProfile,
+  firstName,
+  loadProfile,
+  type TravelyProfile,
+} from "@/lib/profile";
 import { fetchRecommendations } from "@/services/api";
 import type { RecommendationResponse } from "@/types/travel";
 
@@ -58,8 +63,8 @@ export default function HomePage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <BrandMark variant="symbol" className="h-12 w-12" />
-          <p className="font-display text-xl font-extrabold">
-            Olá, {profile.name.split(" ")[0]}.
+          <p className="font-display max-w-[16ch] truncate text-xl font-extrabold">
+            Olá, {firstName(profile.name)}.
           </p>
         </div>
         <button

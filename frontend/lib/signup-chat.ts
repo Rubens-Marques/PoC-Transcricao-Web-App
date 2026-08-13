@@ -1,4 +1,10 @@
-import { MARITAL_OPTIONS, type MaritalStatus } from "@/lib/profile";
+import {
+  LIMITS,
+  MARITAL_OPTIONS,
+  isValidBirthDate,
+  type MaritalStatus,
+  type TravelyProfile,
+} from "@/lib/profile";
 
 export function parseEmail(text: string): string | null {
   const match = text.match(/[^\s@]+@[^\s@]+\.[^\s@]+/);
@@ -78,7 +84,7 @@ export function parseChildren(
   }
   const count = n.match(/(\d+)/);
   if (count) {
-    const nChildren = Number(count[1]);
+    const nChildren = Math.min(LIMITS.children, Number(count[1]));
     return { hasMinorChildren: nChildren > 0, minorChildrenCount: nChildren };
   }
   if (/\b(sim|tenho|filh)/.test(n)) return null;
@@ -106,4 +112,122 @@ export function parseHobbies(text: string): string[] {
     .split(/[,;e]+/i)
     .map((part) => part.trim())
     .filter((part) => part.length > 1);
+}
+
+export type ChatField =
+  | "name"
+  | "email"
+  | "birthDate"
+  | "place"
+  | "maritalStatus"
+  | "children"
+  | "hobbies";
+
+export const CHAT_PROMPTS: Record<ChatField, string> = {
+  name: "Olá. Qual é o seu nome?",
+  email: "Qual é o seu email?",
+  birthDate: "Em que dia você nasceu? Pode dizer 15/03/1952, por exemplo.",
+  place:
+    "Onde você mora? Cidade, estado e país. Se quiser, escreva tudo numa frase.",
+  maritalStatus: "Qual é o seu estado civil hoje?",
+  children: "Você tem filhos menores? Se sim, quantos?",
+  hobbies: "O que você gosta de fazer? Pode listar alguns hobbies.",
+};
+
+export const CHAT_ORDER: ChatField[] = [
+  "name",
+  "email",
+  "birthDate",
+  "place",
+  "maritalStatus",
+  "children",
+  "hobbies",
+];
+
+export function applyChatAnswer(
+  field: ChatField,
+  text: string,
+  profile: TravelyProfile,
+): { ok: true; profile: TravelyProfile } | { ok: false; message: string } {
+  if (field === "name") {
+    const name = text.trim().slice(0, LIMITS.name);
+    if (name.length < 2) {
+      return {
+        ok: false,
+        message: "Não entendi o nome. Pode escrever de novo?",
+      };
+    }
+    return { ok: true, profile: { ...profile, name } };
+  }
+  if (field === "email") {
+    const email = parseEmail(text);
+    if (!email) {
+      return {
+        ok: false,
+        message: "Não achei um email nisso. Algo como nome@email.com.",
+      };
+    }
+    return { ok: true, profile: { ...profile, email } };
+  }
+  if (field === "birthDate") {
+    const birthDate = parseBirthDate(text);
+    if (!birthDate || !isValidBirthDate(birthDate)) {
+      return {
+        ok: false,
+        message: "Não peguei a data. Pode ser 15/03/1952.",
+      };
+    }
+    return { ok: true, profile: { ...profile, birthDate } };
+  }
+  if (field === "place") {
+    const place = parsePlace(text);
+    if (!place.city) {
+      return {
+        ok: false,
+        message:
+          "Pode dizer a cidade e o estado? Exemplo: Campinas, São Paulo, Brasil.",
+      };
+    }
+    return {
+      ok: true,
+      profile: {
+        ...profile,
+        city: place.city.slice(0, LIMITS.place),
+        state: place.state.slice(0, LIMITS.place),
+        country: (place.country || "Brasil").slice(0, LIMITS.place),
+      },
+    };
+  }
+  if (field === "maritalStatus") {
+    const maritalStatus = parseMaritalStatus(text);
+    if (!maritalStatus) {
+      return {
+        ok: false,
+        message:
+          "Pode ser solteiro, casado, união estável, divorciado ou viúvo.",
+      };
+    }
+    return { ok: true, profile: { ...profile, maritalStatus } };
+  }
+  if (field === "children") {
+    const children = parseChildren(text);
+    if (!children) {
+      return {
+        ok: false,
+        message: "Responda não, ou sim e o número. Exemplo: tenho 2.",
+      };
+    }
+    return { ok: true, profile: { ...profile, ...children } };
+  }
+  const hobbies = parseHobbies(text)
+    .map((item) => item.slice(0, LIMITS.hobby))
+    .filter((item) => item.length > 1)
+    .slice(0, LIMITS.hobbies);
+  if (hobbies.length === 0) {
+    return {
+      ok: false,
+      message: "Diga uma ou duas coisas que você gosta de fazer.",
+    };
+  }
+  return { ok: true, profile: { ...profile, hobbies } };
 }

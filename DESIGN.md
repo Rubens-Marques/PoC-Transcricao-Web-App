@@ -278,7 +278,7 @@ Two stacked full-width keys, 7rem min height. Azul = Passo a passo. Amarelo = Co
 
 ### Chat Bubble
 
-Bot left on areia. Traveler right on amarelo-claro with tinta. Max ~40ch.
+Two speakers, always labeled. Travely sits left: 48px símbolo + the word “Travely”, bubble on areia. The traveler sits right: 48px person silhouette on areia + “Você” (then first name after they say it), bubble on amarelo-claro. Composer repeats the traveler avatar beside the field so the person knows that box is their turn. Max ~40ch. No emoji, no unlabeled glyph.
 
 ## Do's and Don'ts
 
