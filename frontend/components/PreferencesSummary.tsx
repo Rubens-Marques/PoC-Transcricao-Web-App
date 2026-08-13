@@ -16,53 +16,44 @@ export function PreferencesSummary({ preferences }: PreferencesSummaryProps) {
   const entries: Array<[string, string]> = [];
 
   if (preferences.destination) {
-    entries.push(["Destination", preferences.destination]);
+    entries.push(["Destino", preferences.destination]);
   }
   if (preferences.country) {
-    entries.push(["Country", preferences.country]);
+    entries.push(["País", preferences.country]);
   }
   if (preferences.category) {
-    entries.push(["Category", preferences.category]);
+    entries.push(["Tipo", preferences.category]);
   }
   if (preferences.month) {
-    // Quando veio de uma estação, o mês foi derivado do hemisfério do país.
-    // Mostrar os dois explica de onde saiu o mês.
     const label = preferences.season
       ? `${preferences.month} (${preferences.season})`
       : preferences.month;
-    entries.push(["Month", label]);
+    entries.push(["Mês", label]);
   }
   if (preferences.travelers) {
-    entries.push(["Travelers", String(preferences.travelers)]);
+    entries.push(["Viajantes", String(preferences.travelers)]);
   }
   if (preferences.budget_level) {
-    entries.push(["Budget level", preferences.budget_level]);
+    entries.push(["Orçamento", preferences.budget_level]);
   }
   if (preferences.max_budget) {
-    entries.push(["Max budget", currency.format(preferences.max_budget)]);
+    entries.push(["Até", currency.format(preferences.max_budget)]);
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-        What we understood
-      </h2>
+    <section className="rounded-2xl bg-sand p-5">
+      <h2 className="font-display text-xl font-extrabold">O que entendemos</h2>
       {entries.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-500">
-          No specific preference was detected — showing the most affordable
-          options.
+        <p className="mt-3 text-xl text-muted">
+          Não deu para pegar um pedido específico — mostrando as opções mais em
+          conta.
         </p>
       ) : (
         <dl className="mt-3 flex flex-wrap gap-2">
           {entries.map(([label, value]) => (
-            <div
-              key={label}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5"
-            >
-              <dt className="text-[11px] uppercase tracking-wide text-slate-400">
-                {label}
-              </dt>
-              <dd className="text-sm font-medium text-slate-800">{value}</dd>
+            <div key={label} className="rounded-2xl bg-panel px-3 py-2">
+              <dt className="text-lg text-muted">{label}</dt>
+              <dd className="text-xl font-bold">{value}</dd>
             </div>
           ))}
         </dl>

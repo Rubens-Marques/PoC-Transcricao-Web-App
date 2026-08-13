@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Travely">
+  <title>Travely — ícone de aplicativo</title>
+  <rect width="1024" height="1024" fill="#0B5FBF"/>
+  <g transform="scale(8.5333)">
+    <circle cx="60" cy="45" r="20" fill="#FFC02E"/>
+    <rect x="0" y="68" width="120" height="10" fill="#FFFFFF"/>
+    <rect x="35" y="86" width="50" height="9" rx="4.5" fill="#FFFFFF"/>
+  </g>
+</svg>

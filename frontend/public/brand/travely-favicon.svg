@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="64" height="64" role="img" aria-label="Travely">
+  <title>Travely — favicon</title>
+  <defs><clipPath id="cf"><rect width="120" height="120" rx="28"/></clipPath></defs>
+  <g clip-path="url(#cf)">
+    <rect width="120" height="120" fill="#0B5FBF"/>
+    <circle cx="60" cy="45" r="20" fill="#FFC02E"/>
+    <rect x="0" y="68" width="120" height="10" fill="#FFFFFF"/>
+    <rect x="35" y="86" width="50" height="9" rx="4.5" fill="#FFFFFF"/>
+  </g>
+</svg>

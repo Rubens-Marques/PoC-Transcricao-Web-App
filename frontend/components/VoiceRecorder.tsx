@@ -40,22 +40,21 @@ export function VoiceRecorder({ onSearch, isSearching }: VoiceRecorderProps) {
   const canSearch = trimmed.length > 0 && !isSearching;
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+    <section className="rounded-2xl bg-sand p-6 sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">
-            Tell us about your trip
+          <h2 className="font-display text-[1.875rem] font-extrabold leading-tight">
+            Conte a viagem
           </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Speak naturally — destination, season, who is coming, how much you
-            want to spend.
+          <p className="mt-2 text-xl text-muted">
+            Fale o destino, a época, com quem vai e quanto quer gastar.
           </p>
         </div>
 
         <div
-          className="inline-flex rounded-lg border border-slate-200 p-0.5"
+          className="inline-flex gap-2"
           role="group"
-          aria-label="Speech recognition language"
+          aria-label="Idioma da fala"
         >
           {LANGUAGES.map((language) => (
             <button
@@ -64,40 +63,30 @@ export function VoiceRecorder({ onSearch, isSearching }: VoiceRecorderProps) {
               onClick={() => setLang(language.code)}
               disabled={isListening}
               aria-pressed={lang === language.code}
-              className={`rounded-md px-3 py-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                lang === language.code
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
+              className={`btn min-h-16 px-4 text-lg ${
+                lang === language.code ? "chip-on" : "btn-ghost"
               }`}
             >
+              {lang === language.code ? "✓ " : ""}
               {language.label}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
+      <div className="mt-8 flex flex-wrap items-center gap-3">
         {isListening ? (
-          <button
-            type="button"
-            onClick={stop}
-            className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
-          >
-            <span
-              className="size-2.5 animate-pulse rounded-full bg-white"
-              aria-hidden="true"
-            />
-            Stop listening
+          <button type="button" onClick={stop} className="btn btn-warn px-5">
+            Parar de ouvir
           </button>
         ) : (
           <button
             type="button"
             onClick={start}
             disabled={isSupported === false}
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+            className="btn btn-voice px-5"
           >
-            <span aria-hidden="true">🎙️</span>
-            Start speaking
+            Falar
           </button>
         )}
 
@@ -105,24 +94,21 @@ export function VoiceRecorder({ onSearch, isSearching }: VoiceRecorderProps) {
           type="button"
           onClick={reset}
           disabled={trimmed.length === 0 && !isListening}
-          className="rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+          className="btn btn-ghost px-4"
         >
-          Clear
+          Limpar
         </button>
 
         {isListening && (
-          <span className="text-sm text-slate-500" role="status">
-            Listening…
+          <span className="text-lg text-muted" role="status">
+            Ouvindo…
           </span>
         )}
       </div>
 
-      <div className="mt-6">
-        <label
-          htmlFor="transcription"
-          className="block text-xs font-semibold uppercase tracking-wide text-slate-500"
-        >
-          Transcription
+      <div className="mt-8">
+        <label htmlFor="transcription" className="block text-xl font-bold">
+          O que você disse
         </label>
         <textarea
           id="transcription"
@@ -130,34 +116,31 @@ export function VoiceRecorder({ onSearch, isSearching }: VoiceRecorderProps) {
           onChange={(event) => setTranscript(event.target.value)}
           rows={3}
           placeholder={EXAMPLES[lang]}
-          className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white"
+          className="field mt-3 min-h-24 resize-y py-4"
         />
-        <p className="mt-2 text-xs text-slate-400">
-          The browser handles transcription. You can also edit or type the text
-          directly.
+        <p className="mt-3 text-lg text-muted">
+          O navegador escreve o que você fala. Pode editar ou digitar direto.
         </p>
       </div>
 
       {isSupported === false && (
-        <p className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          This browser does not support the Web Speech API. Chrome and Edge do —
-          meanwhile, type your request above.
+        <p className="btn-warn mt-6 rounded-2xl px-4 py-3 text-lg">
+          Este navegador não entende fala. No Chrome e no Edge funciona — ou
+          escreva o pedido acima.
         </p>
       )}
 
       {error && (
-        <p className="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-800">
-          {error}
-        </p>
+        <p className="btn-warn mt-6 rounded-2xl px-4 py-3 text-lg">{error}</p>
       )}
 
       <button
         type="button"
         onClick={() => onSearch(trimmed)}
         disabled={!canSearch}
-        className="mt-6 w-full rounded-xl bg-sky-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+        className="btn btn-primary mt-8 w-full"
       >
-        {isSearching ? "Searching…" : "Search travel options"}
+        {isSearching ? "Buscando…" : "Buscar"}
       </button>
     </section>
   );

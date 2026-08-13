@@ -1,12 +1,12 @@
 import type { Recommendation } from "@/types/travel";
 
 const CATEGORY_LABELS: Record<string, string> = {
-  beach: "🏖️ Beach",
-  cold: "🏔️ Cold",
-  city: "🏙️ City",
-  adventure: "🧗 Adventure",
-  culture: "🏛️ Culture",
-  nature: "🌿 Nature",
+  beach: "Praia",
+  cold: "Frio",
+  city: "Cidade",
+  adventure: "Aventura",
+  culture: "Cultura",
+  nature: "Natureza",
 };
 
 const currency = new Intl.NumberFormat("pt-BR", {
@@ -33,47 +33,45 @@ export function PackageCard({ recommendation }: PackageCardProps) {
   } = recommendation;
 
   return (
-    <article className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+    <article className="flex flex-col rounded-2xl bg-sand p-6">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-semibold text-slate-900">{name}</h3>
-        <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+        <h3 className="font-display text-xl font-extrabold">{name}</h3>
+        <span className="shrink-0 rounded-2xl bg-blue-soft px-3 py-1 text-lg font-bold text-ink">
           {CATEGORY_LABELS[category] ?? category}
         </span>
       </div>
 
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-2 text-lg text-muted">
         {destination} — {country}
       </p>
 
-      <p className="mt-3 text-sm leading-relaxed text-slate-600">
-        {description}
-      </p>
+      <p className="mt-3 text-xl leading-relaxed">{description}</p>
 
-      <dl className="mt-4 grid grid-cols-3 gap-3 border-t border-slate-100 pt-4 text-sm">
+      <dl className="mt-4 grid grid-cols-3 gap-3 border-t border-line pt-4 text-lg">
         <div>
-          <dt className="text-xs text-slate-400">Duration</dt>
-          <dd className="mt-0.5 font-medium text-slate-800">{days} days</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-slate-400">Up to</dt>
-          <dd className="mt-0.5 font-medium text-slate-800">
-            {maxPeople} people
+          <dt className="text-muted">Duração</dt>
+          <dd className="mt-0.5 font-bold">
+            {days} {days === 1 ? "dia" : "dias"}
           </dd>
         </div>
         <div>
-          <dt className="text-xs text-slate-400">Price</dt>
-          <dd className="mt-0.5 font-semibold text-slate-900">
-            {currency.format(price)}
+          <dt className="text-muted">Até</dt>
+          <dd className="mt-0.5 font-bold">
+            {maxPeople} {maxPeople === 1 ? "pessoa" : "pessoas"}
           </dd>
+        </div>
+        <div>
+          <dt className="text-muted">Preço</dt>
+          <dd className="mt-0.5 font-bold">{currency.format(price)}</dd>
         </div>
       </dl>
 
       {matchReasons.length > 0 && (
-        <ul className="mt-4 flex flex-wrap gap-1.5">
+        <ul className="mt-4 flex flex-wrap gap-2">
           {matchReasons.map((reason) => (
             <li
               key={reason}
-              className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"
+              className="rounded-2xl bg-blue-soft px-3 py-1 text-lg font-bold"
             >
               {reason}
             </li>
