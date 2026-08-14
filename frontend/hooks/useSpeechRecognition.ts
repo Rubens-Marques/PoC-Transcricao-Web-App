@@ -59,15 +59,19 @@ function getRecognitionConstructor(): SpeechRecognitionConstructor | null {
   );
 }
 
+/** Em pt-BR e dizendo o que fazer, não só o que falhou: o público do produto
+ *  não vai traduzir "service-not-allowed" nem deduzir o próximo passo. */
 const ERROR_MESSAGES: Record<string, string> = {
   "not-allowed":
-    "Microphone access was denied. Allow it in your browser settings and try again.",
+    "O microfone está bloqueado. Libere o microfone nas permissões do navegador e toque em Falar de novo.",
   "service-not-allowed":
-    "Speech recognition was blocked by the browser. Try again over HTTPS or localhost.",
+    "O navegador bloqueou o reconhecimento de fala. Você pode escrever o pedido na caixa acima.",
   "no-speech":
-    "No speech was detected. Try again a bit closer to the microphone.",
-  "audio-capture": "No microphone was found on this device.",
-  network: "The speech recognition service could not be reached.",
+    "Não ouvi nada. Toque em Falar e fale um pouco mais perto do microfone.",
+  "audio-capture":
+    "Não encontrei um microfone neste aparelho. Pode escrever o pedido na caixa acima.",
+  network:
+    "Não consegui falar com o serviço de reconhecimento. Tente de novo em instantes.",
   aborted: "",
 };
 
@@ -128,7 +132,7 @@ export function useSpeechRecognition({
     if (!Recognition) {
       setIsSupported(false);
       setError(
-        "This browser does not support the Web Speech API. Type your request instead.",
+        "Este navegador não entende fala. Escreva o seu pedido na caixa acima.",
       );
       return;
     }
@@ -159,7 +163,10 @@ export function useSpeechRecognition({
 
     recognition.onerror = (event) => {
       const message = ERROR_MESSAGES[event.error];
-      setError(message ?? `Speech recognition failed (${event.error}).`);
+      setError(
+        message ??
+          "Não consegui ouvir agora. Tente de novo ou escreva o seu pedido.",
+      );
       setIsListening(false);
     };
 
