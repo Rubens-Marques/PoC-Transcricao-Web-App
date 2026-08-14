@@ -19,6 +19,7 @@ load_dotenv()
 from database.db import connect, init_schema  # noqa: E402  (needs env loaded)
 from routes.place import router as place_router  # noqa: E402
 from routes.recommendations import router as recommendations_router  # noqa: E402
+from routes.signup import router as signup_router  # noqa: E402
 from services.llm_service import DEFAULT_PROVIDER  # noqa: E402
 
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
@@ -63,6 +64,7 @@ def create_app() -> FastAPI:
 
     app.include_router(recommendations_router)
     app.include_router(place_router)
+    app.include_router(signup_router)
 
     @app.get("/health", tags=["meta"])
     async def health() -> dict[str, str]:
