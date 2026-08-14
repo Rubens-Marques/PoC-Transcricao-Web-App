@@ -8,22 +8,24 @@ interface ResultsListProps {
 export function ResultsList({ recommendations }: ResultsListProps) {
   if (recommendations.length === 0) {
     return (
-      <section className="rounded-2xl bg-sand p-10 text-center">
-        <p className="text-xl font-bold">Ainda não achei um pacote assim.</p>
-        <p className="mt-2 text-xl text-muted">
-          Tente outra época, outro tipo de viagem ou outro orçamento.
+      <section className="tv-placa p-10 text-center">
+        <h2>Ainda não achei uma viagem assim.</h2>
+        {/* Vazio que diz o que fazer em seguida, não só que deu vazio. */}
+        <p className="mt-3 text-corpo text-suave">
+          Tente outra época do ano, outro tipo de viagem ou um valor diferente.
         </p>
       </section>
     );
   }
 
   return (
-    <section>
-      <h2 className="font-display text-xl font-extrabold">
-        {recommendations.length}{" "}
-        {recommendations.length === 1 ? "sugestão" : "sugestões"}
+    <section className="text-center">
+      <h2>
+        {recommendations.length === 1
+          ? "Achei 1 viagem para você"
+          : `Achei ${recommendations.length} viagens para você`}
       </h2>
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
+      <div className="mt-6 grid gap-5 md:grid-cols-2">
         {recommendations.map((recommendation) => (
           <PackageCard
             key={recommendation.id}

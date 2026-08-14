@@ -6,54 +6,93 @@ const currency = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 0,
 });
 
+/** O backend devolve os enums em inglês (`beach`, `December`, `low`). Mostrar
+ *  isso cru na tela obrigaria a pessoa a traduzir mentalmente o próprio pedido. */
+const CATEGORIES: Record<string, string> = {
+  beach: "Praia",
+  cold: "Frio",
+  city: "Cidade",
+  adventure: "Aventura",
+  culture: "Cultura",
+  nature: "Natureza",
+};
+
+const MONTHS: Record<string, string> = {
+  January: "janeiro",
+  February: "fevereiro",
+  March: "março",
+  April: "abril",
+  May: "maio",
+  June: "junho",
+  July: "julho",
+  August: "agosto",
+  September: "setembro",
+  October: "outubro",
+  November: "novembro",
+  December: "dezembro",
+};
+
+const BUDGETS: Record<string, string> = {
+  low: "Mais em conta",
+  medium: "Intermediário",
+  high: "Mais alto",
+};
+
 interface PreferencesSummaryProps {
   preferences: TravelPreferences;
 }
 
-/** Shows what the LLM understood. In a PoC this is the point of the demo:
- *  it makes the extraction step visible instead of implied. */
+/** Mostra o que o sistema entendeu do pedido antes dos resultados. Numa PoC
+ *  isso é a demonstração em si — e para o usuário é a chance de perceber um
+ *  mal-entendido sem precisar deduzi-lo pelas sugestões erradas. */
 export function PreferencesSummary({ preferences }: PreferencesSummaryProps) {
   const entries: Array<[string, string]> = [];
 
-  if (preferences.destination) {
+  if (preferences.destination)
     entries.push(["Destino", preferences.destination]);
-  }
-  if (preferences.country) {
-    entries.push(["País", preferences.country]);
-  }
+  if (preferences.country) entries.push(["País", preferences.country]);
   if (preferences.category) {
-    entries.push(["Tipo", preferences.category]);
+    entries.push([
+      "Tipo de viagem",
+      CATEGORIES[preferences.category] ?? preferences.category,
+    ]);
   }
   if (preferences.month) {
-    const label = preferences.season
-      ? `${preferences.month} (${preferences.season})`
-      : preferences.month;
-    entries.push(["Mês", label]);
+    entries.push(["Quando", MONTHS[preferences.month] ?? preferences.month]);
   }
   if (preferences.travelers) {
-    entries.push(["Viajantes", String(preferences.travelers)]);
+    entries.push([
+      "Quantas pessoas",
+      preferences.travelers === 1
+        ? "1 pessoa"
+        : `${preferences.travelers} pessoas`,
+    ]);
   }
   if (preferences.budget_level) {
-    entries.push(["Orçamento", preferences.budget_level]);
+    entries.push([
+      "Orçamento",
+      BUDGETS[preferences.budget_level] ?? preferences.budget_level,
+    ]);
   }
   if (preferences.max_budget) {
     entries.push(["Até", currency.format(preferences.max_budget)]);
   }
 
   return (
-    <section className="rounded-2xl bg-sand p-5">
-      <h2 className="font-display text-xl font-extrabold">O que entendemos</h2>
+    <section className="tv-placa tv-placa--areia p-6 text-center">
+      <h2>O que eu entendi</h2>
+
       {entries.length === 0 ? (
-        <p className="mt-3 text-xl text-muted">
-          Não deu para pegar um pedido específico — mostrando as opções mais em
-          conta.
+        <p className="mt-3 text-corpo text-suave">
+          Não consegui identificar um pedido específico — estou mostrando as
+          opções mais em conta.
         </p>
       ) : (
-        <dl className="mt-3 flex flex-wrap gap-2">
+        <dl className="mt-4 grid gap-4 sm:grid-cols-2">
           {entries.map(([label, value]) => (
-            <div key={label} className="rounded-2xl bg-panel px-3 py-2">
-              <dt className="text-lg text-muted">{label}</dt>
-              <dd className="text-xl font-bold">{value}</dd>
+            <div key={label} className="rounded-tv border border-linha bg-papel px-4 py-3">
+              <dt className="text-apoio text-suave">{label}</dt>
+              <dd className="mt-1 text-corpo">{value}</dd>
             </div>
           ))}
         </dl>

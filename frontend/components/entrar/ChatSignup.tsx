@@ -1,14 +1,86 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
 import { BotAvatar } from "@/components/entrar/BotAvatar";
-import { EntrarHeader } from "@/components/entrar/EntrarHeader";
+import { EntrarShell } from "@/components/entrar/EntrarShell";
+import { QuickAnswer } from "@/components/entrar/QuickAnswer";
 import { UserAvatar } from "@/components/entrar/UserAvatar";
+import { IconSend } from "@/components/icons";
+import { Button } from "@/components/ui/Button";
 import { LIMITS, type TravelyProfile } from "@/lib/profile";
-import { applyChatAnswer, CHAT_ORDER, CHAT_PROMPTS } from "@/lib/signup-chat";
+import {
+  applyChatAnswer,
+  applyInterpretedAnswer,
+  CHAT_ORDER,
+  CHAT_PROMPTS,
+} from "@/lib/signup-chat";
+import { interpretSignupAnswer, type SignupAnswer } from "@/services/api";
 
-type ChatTurn = { from: "bot" | "you"; text: string };
+type ChatTurn = { id: string; from: "bot" | "you"; text: string };
+
+/** Piso da pausa antes da resposta do assistente. A espera real agora é a do
+ *  modelo; isto só evita que uma resposta instantânea (atalho, ou modelo
+ *  quente) apareça no mesmo quadro do envio, o que lê como falha de render. */
+const MIN_TYPING_MS = 400;
+
+function TypingIndicator() {
+  const reduce = useReducedMotion();
+
+  return (
+    <motion.li
+      initial={reduce ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={reduce ? undefined : { opacity: 0 }}
+      className="flex min-w-0 items-end gap-3"
+    >
+      <BotAvatar />
+      <div className="tv-balao tv-balao--bot inline-flex items-center gap-1.5 py-4">
+        <span className="sr-only">Travely está escrevendo</span>
+        {[0, 1, 2].map((index) => (
+          <motion.span
+            key={index}
+            className="h-2 w-2 rounded-full bg-sol-700"
+            animate={reduce ? { opacity: 0.7 } : { opacity: [0.35, 1, 0.35] }}
+            transition={{
+              duration: 0.9,
+              repeat: Infinity,
+              delay: index * 0.15,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+      </div>
+    </motion.li>
+  );
+}
+
+function MessageRow({ turn, name }: { turn: ChatTurn; name: string }) {
+  const reduce = useReducedMotion();
+  const fromYou = turn.from === "you";
+
+  return (
+    <motion.li
+      initial={reduce ? false : { opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      className={`flex min-w-0 items-end gap-3 ${
+        fromYou ? "flex-row-reverse" : ""
+      }`}
+    >
+      {fromYou ? <UserAvatar name={name} /> : <BotAvatar />}
+      <p className={`tv-balao ${fromYou ? "tv-balao--voce" : "tv-balao--bot"}`}>
+        {/* Qual lado falou não pode depender só de alinhamento e cor. */}
+        <span className="sr-only">{fromYou ? "Você: " : "Travely: "}</span>
+        {turn.text}
+      </p>
+    </motion.li>
+  );
+}
+
+type Applied =
+  { ok: true; profile: TravelyProfile } | { ok: false; message: string };
 
 export function ChatSignup({
   profile,
@@ -21,138 +93,186 @@ export function ChatSignup({
   onFinish: (next: TravelyProfile) => void;
   onBack: () => void;
 }) {
+  const reduce = useReducedMotion();
   const [fieldIndex, setFieldIndex] = useState(0);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
+  const [typing, setTyping] = useState(false);
   const [log, setLog] = useState<ChatTurn[]>([
-    { from: "bot", text: CHAT_PROMPTS.name },
+    { id: "bot-0", from: "bot", text: CHAT_PROMPTS.name },
   ]);
-  const endRef = useRef<HTMLLIElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const finishTimer = useRef<number | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const field = CHAT_ORDER[fieldIndex];
+  const locked = busy || typing;
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end" });
-  }, [log]);
+    const node = scrollRef.current;
+    if (!node) return;
+    node.scrollTo({
+      top: node.scrollHeight,
+      behavior: reduce ? "auto" : "smooth",
+    });
+  }, [log, typing, reduce]);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, [fieldIndex]);
+    if (!locked) inputRef.current?.focus();
+  }, [fieldIndex, locked]);
 
   useEffect(() => {
-    return () => {
-      if (finishTimer.current != null) {
-        window.clearTimeout(finishTimer.current);
-      }
-    };
+    return () => abortRef.current?.abort();
   }, []);
 
-  function send() {
-    const text = draft.trim();
-    if (!text || !field || busy) return;
+  function push(from: "bot" | "you", text: string) {
+    setLog((current) => [
+      ...current,
+      { id: `${from}-${Date.now()}-${current.length}`, from, text },
+    ]);
+  }
 
-    const applied = applyChatAnswer(field, text, profile);
-    if (!applied.ok) {
-      setLog((current) => [
-        ...current,
-        { from: "you", text },
-        { from: "bot", text: applied.message },
-      ]);
-      setDraft("");
-      return;
-    }
-
-    const nextProfile = applied.profile;
+  /** Segue para a próxima pergunta, ou encerra o cadastro. */
+  function advance(nextProfile: TravelyProfile) {
     onProfile(nextProfile);
-    setDraft("");
 
     if (fieldIndex === CHAT_ORDER.length - 1) {
       setBusy(true);
-      setLog((current) => [
-        ...current,
-        { from: "you", text },
-        {
-          from: "bot",
-          text: `Pronto, ${nextProfile.name}. Vou abrir a busca por voz.`,
-        },
-      ]);
-      finishTimer.current = window.setTimeout(() => onFinish(nextProfile), 700);
+      push("bot", `Pronto, ${nextProfile.name}. Vou abrir a busca de viagem.`);
+      window.setTimeout(() => onFinish(nextProfile), 900);
       return;
     }
 
     const nextField = CHAT_ORDER[fieldIndex + 1];
     if (!nextField) return;
     setFieldIndex((index) => index + 1);
-    setLog((current) => [
-      ...current,
-      { from: "you", text },
-      { from: "bot", text: CHAT_PROMPTS[nextField] },
-    ]);
+    push("bot", CHAT_PROMPTS[nextField]);
+  }
+
+  function settle(applied: Applied) {
+    if (applied.ok) {
+      advance(applied.profile);
+      return;
+    }
+    // Não entendeu: repergunta e o índice não avança.
+    push("bot", applied.message);
+  }
+
+  /** Resposta escrita: passa pelo modelo. */
+  async function send() {
+    const text = draft.trim();
+    if (!text || !field || locked) return;
+
+    push("you", text);
+    setDraft("");
+    setTyping(true);
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const startedAt = Date.now();
+    let applied: Applied;
+
+    try {
+      const answer = await interpretSignupAnswer(
+        field,
+        text,
+        controller.signal,
+      );
+      applied = applyInterpretedAnswer(field, answer, profile);
+    } catch (caught) {
+      if (caught instanceof DOMException && caught.name === "AbortError") {
+        return;
+      }
+      // O modelo caiu. O cadastro não pode cair junto: o parser local resolve
+      // as respostas diretas e a pessoa termina o que começou.
+      applied = applyChatAnswer(field, text, profile);
+    }
+
+    const elapsed = Date.now() - startedAt;
+    const wait = reduce ? 0 : Math.max(0, MIN_TYPING_MS - elapsed);
+
+    window.setTimeout(() => {
+      setTyping(false);
+      settle(applied);
+    }, wait);
+  }
+
+  /** Resposta pelo atalho (calendário, opções, contador): já vem estruturada,
+   *  então não gasta uma ida ao modelo. */
+  function answerDirectly(answer: SignupAnswer, label: string) {
+    if (!field || locked) return;
+    push("you", label);
+    settle(applyInterpretedAnswer(field, answer, profile));
   }
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-2xl flex-col px-5 py-8">
-      <EntrarHeader onBack={onBack} note="Conversar" />
-      <ol
-        className="mt-8 flex flex-1 flex-col gap-5"
+    <EntrarShell
+      modo="Conversando"
+      alturaFixa
+      progresso={{ atual: fieldIndex + 1, total: CHAT_ORDER.length }}
+      onBack={onBack}
+      rodape={
+        <div className="flex flex-col gap-4">
+          {field && (
+            <QuickAnswer
+              field={field}
+              disabled={locked}
+              onAnswer={answerDirectly}
+            />
+          )}
+          <form
+            className="flex min-w-0 items-center gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void send();
+            }}
+          >
+            <label className="sr-only" htmlFor="chat-draft">
+              Escreva a sua resposta
+            </label>
+            <input
+              ref={inputRef}
+              id="chat-draft"
+              className="tv-campo min-w-0 flex-1"
+              value={draft}
+              maxLength={LIMITS.chat}
+              disabled={locked}
+              placeholder="Escreva aqui…"
+              onChange={(event) => setDraft(event.target.value)}
+              autoComplete="off"
+            />
+            <Button
+              tom="sol"
+              type="submit"
+              className="shrink-0 px-5"
+              disabled={locked || draft.trim().length === 0}
+            >
+              <IconSend />
+              <span className="sr-only sm:not-sr-only">Enviar</span>
+            </Button>
+          </form>
+        </div>
+      }
+    >
+      <div
+        ref={scrollRef}
+        role="log"
+        aria-label="Conversa com o Travely"
         aria-live="polite"
         aria-relevant="additions"
+        className="w-full min-h-0 flex-1 overflow-y-auto"
       >
-        {log.map((turn, index) => {
-          const fromYou = turn.from === "you";
-          return (
-            <li
-              key={`${turn.from}-${index}`}
-              ref={index === log.length - 1 ? endRef : undefined}
-              className={`flex min-w-0 items-end gap-3 ${fromYou ? "flex-row-reverse" : ""}`}
-            >
-              {fromYou ? <UserAvatar name={profile.name} /> : <BotAvatar />}
-              <p
-                className={
-                  fromYou
-                    ? "min-w-0 max-w-[40ch] break-words rounded-2xl rounded-br-md bg-sun-soft px-4 py-3 text-left text-xl font-normal"
-                    : "min-w-0 max-w-[40ch] break-words rounded-2xl rounded-bl-md bg-sand px-4 py-3 text-left text-xl font-normal"
-                }
-              >
-                <span className="sr-only">
-                  {fromYou ? "Você: " : "Travely: "}
-                </span>
-                {turn.text}
-              </p>
-            </li>
-          );
-        })}
-      </ol>
-      <form
-        className="sticky bottom-0 mt-8 flex min-w-0 items-end gap-3 bg-panel py-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          send();
-        }}
-      >
-        <label className="sr-only" htmlFor="chat-draft">
-          Sua resposta
-        </label>
-        <input
-          ref={inputRef}
-          id="chat-draft"
-          className="field min-w-0 flex-1"
-          value={draft}
-          maxLength={LIMITS.chat}
-          disabled={busy}
-          onChange={(event) => setDraft(event.target.value)}
-          autoComplete="off"
-        />
-        <button
-          type="submit"
-          className="btn btn-primary min-h-16 shrink-0 px-5 text-xl"
-          disabled={busy}
-        >
-          Enviar
-        </button>
-      </form>
-    </main>
+        <ol className="flex flex-col gap-5 pb-4">
+          {log.map((turn) => (
+            <MessageRow key={turn.id} turn={turn} name={profile.name} />
+          ))}
+          <AnimatePresence>
+            {typing ? <TypingIndicator key="typing" /> : null}
+          </AnimatePresence>
+        </ol>
+      </div>
+    </EntrarShell>
   );
 }

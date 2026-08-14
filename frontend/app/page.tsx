@@ -1,13 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { BrandMark } from "@/components/BrandMark";
 import { PreferencesSummary } from "@/components/PreferencesSummary";
 import { ResultsList } from "@/components/ResultsList";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
+import { Button } from "@/components/ui/Button";
+import { Callout } from "@/components/ui/Callout";
 import {
   clearProfile,
   firstName,
@@ -25,6 +26,7 @@ export default function HomePage() {
   const [result, setResult] = useState<RecommendationResponse | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loaded = loadProfile();
@@ -35,6 +37,12 @@ export default function HomePage() {
     setProfile(loaded);
   }, [router]);
 
+  /** Os resultados chegam abaixo da dobra. Sem mover o foco, quem usa teclado
+   *  ou leitor de tela não fica sabendo que a resposta chegou. */
+  useEffect(() => {
+    if (result) resultsRef.current?.focus();
+  }, [result]);
+
   async function handleSearch(text: string) {
     setIsSearching(true);
     setError(null);
@@ -43,7 +51,9 @@ export default function HomePage() {
     } catch (caught: unknown) {
       setResult(null);
       setError(
-        caught instanceof Error ? caught.message : "Não consegui buscar agora.",
+        caught instanceof Error
+          ? caught.message
+          : "Não consegui buscar agora. Tente de novo.",
       );
     } finally {
       setIsSearching(false);
@@ -53,61 +63,63 @@ export default function HomePage() {
   if (profile === undefined || profile === null) {
     return (
       <main className="flex min-h-svh items-center justify-center px-5">
-        <p className="text-xl">Abrindo o Travely…</p>
+        <p className="text-corpo text-suave" role="status">
+          Abrindo o Travely…
+        </p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-10 sm:px-6 sm:py-16">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <BrandMark variant="symbol" className="h-12 w-12" />
-          <p className="font-display max-w-[16ch] truncate text-xl font-extrabold">
-            Olá, {firstName(profile.name)}.
-          </p>
+    <div className="flex min-h-svh flex-col bg-papel">
+      <header className="border-b border-linha">
+        <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-4 px-5 py-3">
+          <span className="w-20" />
+          <BrandMark className="h-8 w-auto" />
+          <Button
+            tom="nu"
+            className="w-20 px-3 text-apoio"
+            onClick={() => {
+              clearProfile();
+              router.push("/entrar");
+            }}
+          >
+            Sair
+          </Button>
         </div>
-        <button
-          type="button"
-          className="btn btn-ghost px-4 py-2 text-base"
-          onClick={() => {
-            clearProfile();
-            router.push("/entrar");
-          }}
-        >
-          Sair
-        </button>
-      </div>
-      <header>
-        <h1 className="font-display text-[1.875rem] font-extrabold tracking-tight">
-          Diga para onde você quer ir
-        </h1>
-        <p className="mt-3 max-w-2xl text-xl">
-          Fale ou escreva a viagem. A gente entende e mostra pacotes que
-          combinam.
-        </p>
       </header>
 
-      <VoiceRecorder onSearch={handleSearch} isSearching={isSearching} />
-
-      {error && (
-        <p role="alert" className="btn-warn rounded-2xl px-4 py-3 text-lg">
-          {error}
-        </p>
-      )}
-
-      {result && (
-        <div className="flex flex-col gap-6">
-          <PreferencesSummary preferences={result.preferences} />
-          <ResultsList recommendations={result.recommendations} />
+      <main
+        id="conteudo"
+        className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center gap-10 px-5 py-12 text-center"
+      >
+        <div>
+          <h1>Olá, {firstName(profile.name)}.</h1>
+          <p className="mt-4 text-corpo text-suave">
+            Para onde você quer ir? Conte o lugar, a época, com quem vai e
+            quanto quer gastar.
+          </p>
         </div>
-      )}
 
-      <p className="text-base">
-        <Link href="/entrar" className="underline">
-          Refazer o cadastro
-        </Link>
-      </p>
-    </main>
+        <VoiceRecorder onSearch={handleSearch} isSearching={isSearching} />
+
+        {error && (
+          <div className="w-full">
+            <Callout tom="erro">{error}</Callout>
+          </div>
+        )}
+
+        {result && (
+          <div
+            ref={resultsRef}
+            tabIndex={-1}
+            className="flex w-full flex-col gap-10 outline-none"
+          >
+            <PreferencesSummary preferences={result.preferences} />
+            <ResultsList recommendations={result.recommendations} />
+          </div>
+        )}
+      </main>
+    </div>
   );
 }

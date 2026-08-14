@@ -1,139 +1,318 @@
 @import "tailwindcss";
 @import "./travely-tokens.css";
 
-@theme {
-  --color-panel: #ffffff;
-  --color-sand: #f5f2ec;
-  --color-ink: #1c1c1c;
-  --color-muted: #4b4b4b;
-  --color-line: #e4e0d8;
-  --color-line-deep: #9a9285;
-  --color-blue: #0b5fbf;
-  --color-blue-deep: #084a96;
-  --color-blue-soft: #e1edfc;
-  --color-sun: #ffc02e;
-  --color-sun-deep: #d99e00;
-  --color-sun-soft: #fff3d6;
-  --color-warn: #d32f2f;
-  --color-warn-soft: #fdeaea;
-  --color-done: #2e7d32;
-  --font-sans: var(--font-inter), "Segoe UI", system-ui, sans-serif;
-  --font-display: var(--font-nunito), "Trebuchet MS", sans-serif;
+/* Expõe os tokens ao Tailwind. Toda cor do produto é um degrau da rampa Sol —
+ * as paletas embutidas do Tailwind (blue-500, gray-700…) não devem ser usadas. */
+@theme inline {
+  --color-papel: var(--tv-papel);
+  --color-areia: var(--tv-areia);
+  --color-creme: var(--tv-creme);
+  --color-sol-100: var(--tv-sol-100);
+  --color-sol-200: var(--tv-sol-200);
+  --color-sol-300: var(--tv-sol-300);
+  --color-sol-400: var(--tv-sol-400);
+  --color-sol-500: var(--tv-sol-500);
+  --color-sol-600: var(--tv-sol-600);
+  --color-sol-700: var(--tv-sol-700);
+  --color-sol-800: var(--tv-sol-800);
+  --color-sol-900: var(--tv-sol-900);
+  --color-tinta: var(--tv-tinta);
+  --color-suave: var(--tv-tinta-suave);
+  --color-linha: var(--tv-linha);
+  --color-linha-forte: var(--tv-linha-forte);
+  --color-alerta: var(--tv-alerta);
+  --color-alerta-fundo: var(--tv-alerta-fundo);
+
+  --font-sans: var(--tv-fonte-texto);
+  --font-display: var(--tv-fonte-marca);
+
+  --text-apoio: var(--tv-txt-apoio);
+  --text-corpo: var(--tv-txt-corpo);
+  --text-botao: var(--tv-txt-botao);
+  --text-titulo: var(--tv-txt-titulo);
+  --text-titulo-g: var(--tv-txt-titulo-g);
+
+  --radius-tv: var(--tv-raio);
+  --radius-tv-g: var(--tv-raio-g);
 }
 
-html {
-  -webkit-text-size-adjust: 100%;
+@layer base {
+  html {
+    /* Respeita o zoom de texto do sistema em vez de anulá-lo: quem aumentou a
+     * fonte do aparelho fez isso de propósito. */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100svh;
+    background: var(--tv-papel);
+    color: var(--tv-tinta);
+    font-family: var(--tv-fonte-texto);
+    font-size: var(--tv-txt-corpo);
+    line-height: var(--tv-altura-linha);
+    text-wrap: pretty;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--tv-fonte-marca);
+    font-weight: 700;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
+
+  h1 {
+    font-size: var(--tv-txt-titulo-g);
+  }
+
+  h2,
+  h3 {
+    font-size: var(--tv-txt-titulo);
+  }
+
+  /* Foco único e escuro para todo o produto. Precisa ser escuro porque metade
+   * das superfícies clicáveis é amarela — um anel amarelo sumiria nelas. */
+  :focus-visible {
+    outline: var(--tv-foco) solid var(--tv-sol-800);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
 
-body {
-  min-height: 100svh;
-  background: var(--tv-papel);
-  color: var(--tv-tinta);
-  font-family: var(--font-sans);
-  font-size: var(--tv-txt-corpo);
-  line-height: var(--tv-altura-linha);
-}
+/* Componentes vão em @layer components para que as utilities do Tailwind
+ * (items-start, w-full, px-4…) continuem podendo sobrescrevê-los pontualmente.
+ * Fora da layer, estas regras venceriam qualquer utility e as sobreposições
+ * feitas no JSX seriam silenciosamente ignoradas. */
+@layer components {
+  /* Pular para o conteúdo: primeiro tab de toda tela.
+   * Escondido por `translateY` e não por `top: -100vh` — deslocar pelo topo
+   * estica o documento e cria uma barra de rolagem fantasma nas telas de
+   * altura fixa. */
+  .pular {
+    position: fixed;
+    left: 50%;
+    top: 1rem;
+    z-index: 50;
+    transform: translate(-50%, calc(-100% - 2rem));
+    background: var(--tv-sol-400);
+    color: var(--tv-sobre-sol);
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--tv-raio);
+    font-weight: 600;
+    transition: transform 140ms ease;
+  }
 
-.font-display {
-  font-family: var(--font-display);
-}
+  .pular:focus {
+    transform: translate(-50%, 0);
+  }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  min-height: var(--tv-alvo-min);
-  padding: 0 1.75rem;
-  border: none;
-  border-radius: var(--tv-raio);
-  font-family: var(--font-sans);
-  font-size: var(--tv-txt-botao);
-  font-weight: 700;
-  cursor: pointer;
-  transition:
-    transform 120ms ease-out,
-    box-shadow 120ms ease-out;
-}
+  /* -------------------------------------------------------------- botão --
+   * Superfície chapada, borda de 1px, sem relevo nem sombra projetada. O que
+   * torna o alvo clicável é o tamanho e o contraste, não a moldura. */
 
-.btn:active:not(:disabled) {
-  transform: translateY(var(--tv-profundidade));
-  box-shadow: none;
-}
+  .tv-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    min-height: var(--tv-alvo-min);
+    padding: 0.625rem 1.5rem;
+    border: var(--tv-borda) solid transparent;
+    border-radius: var(--tv-raio);
+    font-family: inherit;
+    font-size: var(--tv-txt-botao);
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: center;
+    cursor: pointer;
+    transition:
+      background-color 140ms ease,
+      border-color 140ms ease,
+      color 140ms ease;
+  }
 
-.btn:focus-visible,
-.field:focus-visible {
-  outline: var(--tv-foco) solid var(--tv-azul-sombra);
-  outline-offset: 3px;
-}
+  .tv-btn:disabled {
+    cursor: not-allowed;
+    /* Inativo é superfície apagada + tinta suave, nunca opacidade: opacidade
+     * derruba o contraste do rótulo junto com o do fundo. */
+    background: var(--tv-areia);
+    border-color: var(--tv-linha);
+    color: var(--tv-tinta-suave);
+  }
 
-.btn:disabled {
-  cursor: not-allowed;
-  background: var(--tv-areia);
-  color: var(--tv-tinta-suave);
-  box-shadow: none;
-}
+  .tv-btn--sol {
+    background: var(--tv-sol-400);
+    border-color: var(--tv-sol-400);
+    color: var(--tv-sobre-sol);
+  }
 
-.btn-primary {
-  background: var(--tv-azul);
-  color: var(--tv-sobre-azul);
-  box-shadow: 0 var(--tv-profundidade) 0 var(--tv-azul-sombra);
-}
+  .tv-btn--sol:hover:not(:disabled) {
+    background: var(--tv-sol-500);
+    border-color: var(--tv-sol-500);
+  }
 
-.btn-voice {
-  background: var(--tv-amarelo);
-  color: var(--tv-sobre-amarelo);
-  box-shadow: 0 var(--tv-profundidade) 0 var(--tv-amarelo-sombra);
-}
+  .tv-btn--claro {
+    background: var(--tv-papel);
+    border-color: var(--tv-linha-forte);
+    color: var(--tv-tinta);
+  }
 
-.btn-ghost {
-  background: var(--tv-papel);
-  color: var(--tv-tinta);
-  box-shadow: 0 var(--tv-profundidade) 0 var(--tv-linha-forte);
-}
+  .tv-btn--claro:hover:not(:disabled) {
+    background: var(--tv-sol-100);
+  }
 
-.btn-warn {
-  background: var(--tv-alerta-claro);
-  color: var(--tv-alerta);
-  box-shadow: none;
-}
+  /* Terceiro nível: sem borda, para ações de saída que não devem competir. */
+  .tv-btn--nu {
+    background: transparent;
+    border-color: transparent;
+    color: var(--tv-tinta-suave);
+  }
 
-.field {
-  width: 100%;
-  min-height: var(--tv-alvo-min);
-  border: var(--tv-borda-campo) solid var(--tv-linha-forte);
-  background: var(--tv-papel);
-  color: var(--tv-tinta);
-  font: inherit;
-  padding: 0 1rem;
-  border-radius: var(--tv-raio-campo);
-}
+  .tv-btn--nu:hover:not(:disabled) {
+    background: var(--tv-areia);
+    color: var(--tv-tinta);
+  }
 
-.field:focus {
-  border-color: var(--tv-azul);
-}
+  .tv-btn--alerta {
+    background: var(--tv-alerta);
+    border-color: var(--tv-alerta);
+    color: var(--tv-sobre-escuro);
+  }
 
-.chip-on {
-  background: var(--tv-azul-claro);
-  box-shadow: inset 0 0 0 3px var(--tv-azul);
-  color: var(--tv-tinta);
-}
+  /* ------------------------------------------------------------- campo -- */
 
-.progress-track {
-  height: 1rem;
-  overflow: hidden;
-  border-radius: var(--tv-raio);
-  background: var(--tv-areia);
-}
+  .tv-campo {
+    width: 100%;
+    min-height: var(--tv-alvo-min);
+    padding: 0.75rem 1rem;
+    border: var(--tv-borda) solid var(--tv-linha-forte);
+    border-radius: var(--tv-raio);
+    background: var(--tv-papel);
+    color: var(--tv-tinta);
+    font: inherit;
+    text-align: center;
+    transition: border-color 140ms ease;
+  }
 
-.progress-fill {
-  height: 100%;
-  border-radius: var(--tv-raio);
-  background: var(--tv-azul);
+  .tv-campo::placeholder {
+    color: var(--tv-tinta-suave);
+  }
+
+  .tv-campo:focus {
+    border-color: var(--tv-sol-800);
+  }
+
+  .tv-campo[aria-invalid="true"] {
+    border-color: var(--tv-alerta);
+  }
+
+  /* ------------------------------------------------------------- opção --
+   * Item selecionado carrega três sinais somados: fundo, cor de borda e a
+   * marca de seleção do componente. Cor sozinha não diz nada. A borda
+   * continua com 1px nos dois estados para o item não "pular" ao ser
+   * escolhido. */
+
+  .tv-opcao {
+    display: flex;
+    width: 100%;
+    min-height: var(--tv-alvo-min);
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1.25rem;
+    border: var(--tv-borda) solid var(--tv-linha);
+    border-radius: var(--tv-raio);
+    background: var(--tv-papel);
+    color: var(--tv-tinta);
+    font: inherit;
+    font-size: var(--tv-txt-corpo);
+    text-align: center;
+    cursor: pointer;
+    transition:
+      background-color 140ms ease,
+      border-color 140ms ease;
+  }
+
+  .tv-opcao:hover {
+    border-color: var(--tv-linha-forte);
+    background: var(--tv-areia);
+  }
+
+  .tv-opcao--on {
+    background: var(--tv-sol-100);
+    border-color: var(--tv-sol-700);
+    font-weight: 600;
+  }
+
+  /* ------------------------------------------------------------- placa -- */
+
+  .tv-placa {
+    border: var(--tv-borda) solid var(--tv-linha);
+    border-radius: var(--tv-raio-g);
+    background: var(--tv-papel);
+    box-shadow: var(--tv-sombra-leve);
+  }
+
+  .tv-placa--areia {
+    background: var(--tv-areia);
+    box-shadow: none;
+  }
+
+  /* ------------------------------------------------------------- balão --
+   * O assistente fala em amarelo claro, a pessoa responde em papel com borda.
+   * Os dois também diferem em posição e no rótulo lido por leitor de tela. */
+
+  .tv-balao {
+    /* Âncora para o rótulo "Você:"/"Travely:", que é `position: absolute`.
+     * Sem isto ele se posiciona contra o documento, escapa do painel que rola
+     * e estica a página inteira. */
+    position: relative;
+    max-width: 30ch;
+    padding: 0.875rem 1.125rem;
+    border: var(--tv-borda) solid transparent;
+    border-radius: var(--tv-raio-g);
+    font-size: var(--tv-txt-corpo);
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  .tv-balao--bot {
+    background: var(--tv-sol-100);
+    border-color: var(--tv-sol-200);
+    border-bottom-left-radius: 0.25rem;
+  }
+
+  .tv-balao--voce {
+    background: var(--tv-papel);
+    border-color: var(--tv-linha-forte);
+    border-bottom-right-radius: 0.25rem;
+  }
+
+  /* ---------------------------------------------------------- progresso -- */
+
+  .tv-trilho {
+    height: 0.375rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--tv-creme);
+  }
+
+  .tv-trilho__preenche {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--tv-sol-400);
+    transition: width 300ms ease-out;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .btn {
-    transition: none;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

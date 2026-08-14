@@ -2,9 +2,11 @@ import {
   LIMITS,
   MARITAL_OPTIONS,
   isValidBirthDate,
+  isValidEmail,
   type MaritalStatus,
   type TravelyProfile,
 } from "@/lib/profile";
+import type { SignupAnswer } from "@/services/api";
 
 export function parseEmail(text: string): string | null {
   const match = text.match(/[^\s@]+@[^\s@]+\.[^\s@]+/);
@@ -221,6 +223,119 @@ export function applyChatAnswer(
   }
   const hobbies = parseHobbies(text)
     .map((item) => item.slice(0, LIMITS.hobby))
+    .filter((item) => item.length > 1)
+    .slice(0, LIMITS.hobbies);
+  if (hobbies.length === 0) {
+    return {
+      ok: false,
+      message: "Diga uma ou duas coisas que você gosta de fazer.",
+    };
+  }
+  return { ok: true, profile: { ...profile, hobbies } };
+}
+
+/** Aplica ao perfil o que o modelo entendeu de UMA resposta.
+ *
+ *  A validação continua aqui, e não some porque agora existe uma IA no meio:
+ *  `SignupAnswer` chega com o tipo certo (o schema garante), mas não com o
+ *  valor certo. Email malformado e data impossível são recusados do mesmo
+ *  jeito que eram com o parser local.
+ */
+export function applyInterpretedAnswer(
+  field: ChatField,
+  answer: SignupAnswer,
+  profile: TravelyProfile,
+): { ok: true; profile: TravelyProfile } | { ok: false; message: string } {
+  if (field === "name") {
+    const name = (answer.full_name ?? "").trim().slice(0, LIMITS.name);
+    if (name.length < 2) {
+      return { ok: false, message: "Não peguei o nome. Pode escrever de novo?" };
+    }
+    return { ok: true, profile: { ...profile, name } };
+  }
+
+  if (field === "email") {
+    const email = (answer.email ?? "").trim().toLowerCase();
+    if (!isValidEmail(email)) {
+      return {
+        ok: false,
+        message: "Não achei um email nisso. Algo como nome@email.com.",
+      };
+    }
+    return { ok: true, profile: { ...profile, email } };
+  }
+
+  if (field === "birthDate") {
+    const birthDate = answer.birth_date ?? "";
+    if (!isValidBirthDate(birthDate)) {
+      // Idade sem data é resposta parcial, não erro: reconhece o que veio e
+      // pede só o que falta, em vez de mandar repetir tudo.
+      if (answer.age != null) {
+        return {
+          ok: false,
+          message: `Entendi, ${answer.age} anos. E em que dia e mês você nasceu? Pode usar o calendário aqui embaixo.`,
+        };
+      }
+      return {
+        ok: false,
+        message: "Não peguei a data. Pode ser 15/03/1952, ou use o calendário.",
+      };
+    }
+    return { ok: true, profile: { ...profile, birthDate } };
+  }
+
+  if (field === "place") {
+    const city = (answer.city ?? "").trim().slice(0, LIMITS.place);
+    if (!city) {
+      return {
+        ok: false,
+        message: "Pode dizer a cidade e o estado? Exemplo: Campinas, São Paulo.",
+      };
+    }
+    return {
+      ok: true,
+      profile: {
+        ...profile,
+        city,
+        state: (answer.state ?? "").trim().slice(0, LIMITS.place),
+        country: (answer.country ?? "Brasil").trim().slice(0, LIMITS.place),
+      },
+    };
+  }
+
+  if (field === "maritalStatus") {
+    if (!answer.marital_status) {
+      return {
+        ok: false,
+        message:
+          "Pode ser solteiro, casado, união estável, divorciado ou viúvo. Ou escolha aqui embaixo.",
+      };
+    }
+    return { ok: true, profile: { ...profile, maritalStatus: answer.marital_status } };
+  }
+
+  if (field === "children") {
+    if (answer.has_minor_children == null) {
+      return {
+        ok: false,
+        message: "Responda não, ou sim e quantos. Exemplo: tenho 2.",
+      };
+    }
+    const count = answer.has_minor_children
+      ? Math.max(1, Math.min(LIMITS.children, answer.minor_children_count ?? 1))
+      : 0;
+    return {
+      ok: true,
+      profile: {
+        ...profile,
+        hasMinorChildren: answer.has_minor_children,
+        minorChildrenCount: count,
+      },
+    };
+  }
+
+  const hobbies = answer.hobbies
+    .map((item) => item.trim().slice(0, LIMITS.hobby))
     .filter((item) => item.length > 1)
     .slice(0, LIMITS.hobbies);
   if (hobbies.length === 0) {

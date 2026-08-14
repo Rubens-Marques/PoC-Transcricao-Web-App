@@ -1,118 +1,65 @@
-/* ==========================================================================
-   Travely — Design Tokens v1
-   Paleta "Manhã Clara": amarelo, azul e branco.
-   Todos os pares de uso previstos foram checados contra WCAG 2.1.
-   Tema único (claro). Não existe dark mode neste produto.
-   ========================================================================== */
+/* Travely — tokens do design system. Fonte única de verdade.
+ *
+ * Paleta "Sol": um matiz só (amarelo/âmbar, hue ~40) do papel ao quase-preto.
+ * Não existe azul, verde ou cinza neutro na interface — o azul sobrevive
+ * apenas dentro dos SVGs da marca, que são assets e não tokens.
+ *
+ * Regra que governa tudo: amarelo claro é SUPERFÍCIE, amarelo escuro é TINTA.
+ * Amarelo médio (400/500) nunca vira texto — reprova contraste.
+ *
+ * Acabamento: linhas finas, raio contido, sem sombra dura nem relevo. O peso
+ * visual vem do tamanho do alvo e do contraste do texto, não de moldura.
+ */
 
 :root {
-  /* ---------- Superfícies ---------- */
-  --tv-papel:        #FFFFFF; /* fundo padrão de tela */
-  --tv-areia:        #F5F2EC; /* cartões, blocos agrupados, listas zebradas */
-  --tv-linha-forte:  #9A9285; /* borda de campo, borda de card clicável — 3,1:1 no branco */
-  --tv-linha-suave:  #E4E0D8; /* separador puramente decorativo — NUNCA como borda de campo */
+  /* ---- Rampa Sol: do papel ao quase-preto, mesmo matiz ---- */
+  --tv-papel: #fffdf8; /* fundo padrão da tela */
+  --tv-areia: #faf5ea; /* superfície elevada discreta */
+  --tv-creme: #f4ecda; /* segundo nível de agrupamento */
 
-  /* ---------- Texto ---------- */
-  --tv-tinta:        #1C1C1C; /* texto principal — 16,9:1 no branco */
-  --tv-tinta-suave:  #4B4B4B; /* texto secundário — 8,7:1 no branco. Menor valor permitido. */
+  --tv-sol-100: #fff6de; /* fundo de item selecionado, balão */
+  --tv-sol-200: #ffe9b4;
+  --tv-sol-300: #ffd979;
+  --tv-sol-400: #ffc02e; /* Amarelo Manhã — ação primária e marca */
+  --tv-sol-500: #f0ab00; /* hover da ação primária */
+  --tv-sol-600: #b87c00;
+  --tv-sol-700: #9a6600; /* borda de item selecionado */
+  --tv-sol-800: #6e4700; /* anel de foco e texto de apoio — 8,1:1 no papel */
+  --tv-sol-900: #4a2f00;
 
-  /* ---------- Ação principal: avançar, confirmar, enviar ---------- */
-  --tv-azul:         #0B5FBF; /* fundo do botão — 6,2:1 com texto branco */
-  --tv-azul-sombra:  #084A96; /* borda inferior de 4px (profundidade) e estado pressionado */
-  --tv-azul-claro:   #E1EDFC; /* fundo de item selecionado / linha ativa */
+  /* ---- Tinta: neutros quentes, puxados para o mesmo matiz ---- */
+  --tv-tinta: #241b09; /* texto principal — 16,7:1 no papel */
+  --tv-tinta-suave: #6a5836; /* texto secundário — 6,3:1 no papel */
+  --tv-linha: #e7ddc8; /* borda padrão, fina e discreta */
+  --tv-linha-forte: #8f7c52; /* borda de campo — 4,1:1, passa como controle */
 
-  /* ---------- Ação de voz e destaque de marca ---------- */
-  --tv-amarelo:        #FFC02E; /* fundo do botão — 10,4:1 com texto --tv-tinta */
-  --tv-amarelo-sombra: #D99E00; /* borda inferior de 4px e estado pressionado */
-  --tv-amarelo-claro:  #FFF3D6; /* faixa de aviso suave, marcação de texto */
+  /* ---- Sinal ---- */
+  --tv-alerta: #8a2f00; /* terracota: subtom quente, 8,3:1 no papel */
+  --tv-alerta-fundo: #fdefe7;
 
-  /* ---------- Estados ---------- */
-  --tv-alerta:       #D32F2F; /* erro e ação destrutiva — 5,0:1 no branco e com texto branco */
-  --tv-alerta-claro: #FDEAEA;
-  --tv-feito:        #2E7D32; /* SOMENTE status "concluído". Nunca vira botão. — 5,1:1 no branco */
+  /* ---- Texto sobre superfície ---- */
+  --tv-sobre-sol: #241b09; /* sobre qualquer amarelo, o texto é tinta */
+  --tv-sobre-escuro: #fffdf8;
 
-  /* ---------- Texto sobre cor ---------- */
-  --tv-sobre-azul:     #FFFFFF;
-  --tv-sobre-amarelo:  #1C1C1C;
-  --tv-sobre-alerta:   #FFFFFF;
+  /* ---- Tipografia: escala grande, pensada para 40+ ---- */
+  --tv-fonte-marca: var(--font-nunito), "Trebuchet MS", sans-serif;
+  --tv-fonte-texto: var(--font-inter), system-ui, sans-serif;
 
-  /* ---------- Tipografia ---------- */
-  --tv-fonte-marca: 'Nunito', 'Trebuchet MS', sans-serif;  /* logo e títulos de tela */
-  --tv-fonte-texto: 'Inter', 'Segoe UI', system-ui, sans-serif; /* corpo e botões */
+  --tv-txt-apoio: 1.125rem; /* 18px — piso absoluto do produto */
+  --tv-txt-corpo: 1.25rem; /* 20px */
+  --tv-txt-botao: 1.1875rem; /* 19px */
+  --tv-txt-titulo: 1.625rem; /* 26px */
+  --tv-txt-titulo-g: 2rem; /* 32px — só no topo de tela */
+  --tv-altura-linha: 1.6;
 
-  --tv-txt-titulo:   30px; /* pergunta principal da tela */
-  --tv-txt-botao:    22px;
-  --tv-txt-corpo:    20px; /* piso absoluto de leitura para 60+ */
-  --tv-txt-apoio:    18px; /* menor tamanho permitido em todo o produto */
-  --tv-altura-linha: 1.5;
-
-  /* ---------- Forma e alvo de toque ---------- */
-  --tv-raio:         16px; /* canto arredondado: nunca canto vivo, nunca pílula total */
-  --tv-raio-campo:   12px;
-  --tv-alvo-min:     64px; /* altura mínima de qualquer botão. WCAG pede 44px; 60+ pede mais. */
-  --tv-borda-campo:  2px;
-  --tv-foco:         4px;  /* anel de foco visível no teclado, cor --tv-azul-sombra */
-  --tv-profundidade: 4px;  /* borda inferior sólida do botão */
-}
-
-/* --------------------------------------------------------------------------
-   Componentes base
-   -------------------------------------------------------------------------- */
-
-.tv-botao {
-  min-height: var(--tv-alvo-min);
-  padding: 0 28px;
-  border: none;
-  border-radius: var(--tv-raio);
-  font-family: var(--tv-fonte-texto);
-  font-size: var(--tv-txt-botao);
-  font-weight: 700;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-}
-
-.tv-botao--principal {
-  background: var(--tv-azul);
-  color: var(--tv-sobre-azul);
-  box-shadow: 0 var(--tv-profundidade) 0 var(--tv-azul-sombra);
-}
-
-.tv-botao--voz {
-  background: var(--tv-amarelo);
-  color: var(--tv-sobre-amarelo);
-  box-shadow: 0 var(--tv-profundidade) 0 var(--tv-amarelo-sombra);
-}
-
-.tv-botao:active {
-  transform: translateY(var(--tv-profundidade));
-  box-shadow: none;
-}
-
-.tv-botao:focus-visible {
-  outline: var(--tv-foco) solid var(--tv-azul-sombra);
-  outline-offset: 3px;
-}
-
-.tv-campo {
-  min-height: var(--tv-alvo-min);
-  border: var(--tv-borda-campo) solid var(--tv-linha-forte);
-  border-radius: var(--tv-raio-campo);
-  background: var(--tv-papel);
-  color: var(--tv-tinta);
-  font-size: var(--tv-txt-corpo);
-  padding: 0 16px;
-}
-
-/* Item selecionado: cor + borda + marca de seleção.
-   Nunca sinalizar seleção só pela cor. */
-.tv-item--selecionado {
-  background: var(--tv-azul-claro);
-  border: 3px solid var(--tv-azul);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+  /* ---- Forma e alvo ----
+   * 56px de alvo mínimo: acima dos 44px da WCAG 2.2, porque tremor e
+   * imprecisão de toque aumentam com a idade. Bordas de 1px mantêm o traço
+   * delicado; o que carrega o clique é o tamanho, não a espessura. */
+  --tv-alvo-min: 3.5rem;
+  --tv-raio: 0.625rem;
+  --tv-raio-g: 0.875rem;
+  --tv-foco: 3px;
+  --tv-borda: 1px;
+  --tv-sombra-leve: 0 1px 2px rgba(36, 27, 9, 0.04);
 }

@@ -1,3 +1,5 @@
+import type { MaritalStatus } from "@/lib/profile";
+import type { ChatField } from "@/lib/signup-chat";
 import type { RecommendationResponse } from "@/types/travel";
 
 const API_BASE_URL =
@@ -76,4 +78,34 @@ export async function lookupPlace(
   signal?: AbortSignal,
 ): Promise<PlaceLookup> {
   return postJson<PlaceLookup>("/api/place", { lat, lon }, signal);
+}
+
+/** Espelha SignupAnswer em backend/models/signup.py. */
+export type SignupAnswer = {
+  full_name: string | null;
+  email: string | null;
+  birth_date: string | null;
+  age: number | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  marital_status: MaritalStatus | null;
+  has_minor_children: boolean | null;
+  minor_children_count: number | null;
+  hobbies: string[];
+};
+
+/** Manda a resposta do cadastro conversado para o modelo entender.
+ *  Quem chama trata a falha: o cadastro nunca pode parar porque a IA caiu. */
+export async function interpretSignupAnswer(
+  field: ChatField,
+  text: string,
+  signal?: AbortSignal,
+): Promise<SignupAnswer> {
+  const body = await postJson<{ answer: SignupAnswer }>(
+    "/api/signup/interpret",
+    { field, text },
+    signal,
+  );
+  return body.answer;
 }

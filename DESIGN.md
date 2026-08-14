@@ -1,299 +1,189 @@
 ---
 name: Travely
-description: Paleta Manhã Clara — sol no horizonte, azul para avançar, amarelo para voz.
+description: Paleta Sol — um único matiz amarelo, do papel ao quase-preto. Interface clean para 40+.
 colors:
-  papel: "#ffffff"
-  areia: "#f5f2ec"
-  tinta: "#1c1c1c"
-  tinta-suave: "#4b4b4b"
-  linha-forte: "#9a9285"
-  linha-suave: "#e4e0d8"
-  azul: "#0b5fbf"
-  azul-sombra: "#084a96"
-  azul-claro: "#e1edfc"
-  amarelo: "#ffc02e"
-  amarelo-sombra: "#d99e00"
-  amarelo-claro: "#fff3d6"
-  alerta: "#d32f2f"
-  alerta-claro: "#fdeaea"
-  feito: "#2e7d32"
-  sobre-azul: "#ffffff"
-typography:
-  display:
-    fontFamily: "Nunito, Trebuchet MS, sans-serif"
-    fontSize: "1.875rem"
-    fontWeight: 800
-    lineHeight: 1.25
-    letterSpacing: "normal"
-  headline:
-    fontFamily: "Nunito, Trebuchet MS, sans-serif"
-    fontSize: "1.875rem"
-    fontWeight: 800
-    lineHeight: 1.25
-    letterSpacing: "normal"
-  title:
-    fontFamily: "Inter, Segoe UI, system-ui, sans-serif"
-    fontSize: "1.125rem"
-    fontWeight: 700
-    lineHeight: 1.45
-    letterSpacing: "normal"
-  body:
-    fontFamily: "Inter, Segoe UI, system-ui, sans-serif"
-    fontSize: "1.25rem"
-    fontWeight: 400
-    lineHeight: 1.45
-    letterSpacing: "normal"
-  label:
-    fontFamily: "Inter, Segoe UI, system-ui, sans-serif"
-    fontSize: "1.125rem"
-    fontWeight: 400
-    lineHeight: 1.45
-    letterSpacing: "normal"
-rounded:
-  sm: "0.375rem"
-  md: "1rem"
-  lg: "1.5rem"
-  full: "999px"
-spacing:
-  sm: "0.75rem"
-  md: "1rem"
-  lg: "1.25rem"
-  xl: "1.5rem"
-  "2xl": "2rem"
-  "3xl": "2.5rem"
-  control: "4rem"
-components:
-  button-primary:
-    backgroundColor: "{colors.azul}"
-    textColor: "{colors.sobre-azul}"
-    typography: "{typography.title}"
-    rounded: "{rounded.md}"
-    padding: "0 1.75rem"
-    height: "{spacing.control}"
-  button-voice:
-    backgroundColor: "{colors.amarelo}"
-    textColor: "{colors.tinta}"
-    typography: "{typography.title}"
-    rounded: "{rounded.md}"
-    padding: "0 1.75rem"
-    height: "{spacing.control}"
-  button-ghost:
-    backgroundColor: "{colors.papel}"
-    textColor: "{colors.tinta}"
-    typography: "{typography.label}"
-    rounded: "{rounded.md}"
-    padding: "0.5rem 1rem"
-  button-chip-on:
-    backgroundColor: "{colors.azul-claro}"
-    textColor: "{colors.tinta}"
-    typography: "{typography.body}"
-    rounded: "{rounded.md}"
-    padding: "0.75rem 1rem"
-    height: "{spacing.control}"
-  button-warn:
-    backgroundColor: "{colors.alerta-claro}"
-    textColor: "{colors.alerta}"
-    typography: "{typography.label}"
-    rounded: "{rounded.md}"
-    padding: "0.75rem 1rem"
-  door-primary:
-    backgroundColor: "{colors.azul}"
-    textColor: "{colors.sobre-azul}"
-    typography: "{typography.headline}"
-    rounded: "{rounded.md}"
-    padding: "1.5rem"
-    height: "7rem"
-    width: "100%"
-  door-voice:
-    backgroundColor: "{colors.amarelo}"
-    textColor: "{colors.tinta}"
-    typography: "{typography.headline}"
-    rounded: "{rounded.md}"
-    padding: "1.5rem"
-    height: "7rem"
-    width: "100%"
-  input:
-    backgroundColor: "{colors.papel}"
-    textColor: "{colors.tinta}"
-    typography: "{typography.body}"
-    rounded: "{rounded.md}"
-    padding: "0.85rem 1.1rem"
-    height: "{spacing.control}"
-    width: "100%"
-  chat-bot:
-    backgroundColor: "{colors.areia}"
-    textColor: "{colors.tinta}"
-    typography: "{typography.body}"
-    rounded: "{rounded.md}"
-    padding: "0.75rem 1rem"
-  chat-you:
-    backgroundColor: "{colors.amarelo-claro}"
-    textColor: "{colors.tinta}"
-    typography: "{typography.body}"
-    rounded: "{rounded.md}"
-    padding: "0.75rem 1rem"
+  papel: "#fffdf8"
+  areia: "#faf5ea"
+  creme: "#f4ecda"
+  sol-100: "#fff6de"
+  sol-200: "#ffe9b4"
+  sol-300: "#ffd979"
+  sol-400: "#ffc02e"
+  sol-500: "#f0ab00"
+  sol-600: "#b87c00"
+  sol-700: "#9a6600"
+  sol-800: "#6e4700"
+  sol-900: "#4a2f00"
+  tinta: "#241b09"
+  tinta-suave: "#6a5836"
+  linha: "#e7ddc8"
+  linha-forte: "#8f7c52"
+  alerta: "#8a2f00"
+  alerta-fundo: "#fdefe7"
 ---
 
-# Design System: Travely
+# Travely — Design System
 
-## Overview
+Produto de viagem para pessoas de 40 anos ou mais. Duas decisões governam tudo o
+que está aqui: **uma cor só** e **uma pergunta por vez**.
 
-**Creative North Star: "Manhã Clara"**
+Fonte única de verdade: [`frontend/app/travely-tokens.css`](frontend/app/travely-tokens.css).
+Os componentes CSS ficam em [`frontend/app/globals.css`](frontend/app/globals.css),
+dentro de `@layer components`. Os componentes React vivem em
+[`frontend/components/ui/`](frontend/components/ui/).
 
-Travely is a light morning window: white paper, a yellow sun over a blue horizon, and two obvious doors. The logo is that window. The UI borrows the same paints. Blue Horizonte advances (continuar, enviar, passo a passo). Yellow Manhã is the rare, warm action — voice, and on the first screen the Conversar door. Never a third action color. Never dark mode.
+---
 
-Type: Nunito 800 on screen titles, Inter 400/700 on body and buttons. Body is 20px. Buttons are 64px tall with a 4px solid lip, 16px corners, press-in. Selected items use Azul Claro + 3px blue border + a check — never color alone.
+## 1. Uma cor só: a rampa Sol
 
-**Key Characteristics:**
+Todo o produto usa um único matiz (amarelo/âmbar, hue ≈ 40), do papel ao
+quase-preto. Não existe azul, verde nem cinza neutro na interface. O azul
+sobrevive apenas **dentro dos arquivos SVG da marca**, que são assets — nenhum
+token de produto aponta para ele.
 
-- Paper `#FFFFFF` or sand `#F5F2EC`; ink `#1C1C1C`
-- Blue confirms; yellow is voice / the other door (max one yellow control per screen)
-- Green `#2E7D32` is status “feito” only — never a button
-- Logo: sun, horizon, reflection. No globe, plane, pin, or backpack
-- Portuguese, one question at a time
+Os neutros não são cinzas: `tinta` e `tinta-suave` são puxados para o mesmo
+matiz, o que faz o preto do texto e o amarelo do botão parecerem da mesma
+família em vez de duas decisões separadas.
 
-## Colors
+### A regra que evita o desastre do amarelo
 
-Paleta do kit v1 (`frontend/app/travely-tokens.css`). Contrastes WCAG 2.1 já checados no manual.
+> **Amarelo claro é superfície. Amarelo escuro é tinta. Amarelo médio nunca é texto.**
 
-### Primary
+`sol-400` sobre branco dá 1,6 : 1 — reprova em qualquer critério. Por isso
+`sol-400` e `sol-500` só aparecem como **fundo**, sempre com texto `tinta` em
+cima. Quando é preciso amarelo em cima de fundo claro (ícone, borda, texto de
+apoio), o degrau usado é `sol-700` ou `sol-800`.
 
-- **Azul Horizonte** (`azul` `#0B5FBF`): avançar, confirmar, enviar, porta Passo a passo. Texto branco.
-- **Azul Sombra** (`azul-sombra` `#084A96`): lábio de 4px, pressionado, anel de foco.
-- **Azul Claro** (`azul-claro` `#E1EDFC`): fundo de item selecionado, junto da borda azul e do ✓.
+### Contraste medido
 
-### Secondary
+| Par                     | Razão    | Uso                                    |
+| ----------------------- | -------- | -------------------------------------- |
+| `tinta` / `papel`       | 16,7 : 1 | Texto principal                        |
+| `tinta-suave` / `papel` | 6,8 : 1  | Texto secundário                       |
+| `tinta` / `sol-400`     | 10,4 : 1 | Rótulo do botão primário               |
+| `tinta` / `sol-100`     | 15,8 : 1 | Item selecionado, balão do assistente  |
+| `linha-forte` / `papel` | 4,0 : 1  | Borda de campo (mínimo 3 : 1)          |
+| `sol-700` / `sol-100`   | 4,6 : 1  | Borda de item selecionado              |
+| `sol-800` / `papel`     | 8,1 : 1  | Anel de foco sobre fundo claro         |
+| `sol-800` / `sol-400`   | 5,0 : 1  | Anel de foco **sobre o botão amarelo** |
+| `alerta` / `papel`      | 8,3 : 1  | Erro                                   |
 
-- **Amarelo Manhã** (`amarelo` `#FFC02E`): voz e, na primeira tela, Conversar. Texto tinta `#1C1C1C`. No máximo um por tela. Nunca como texto sobre branco.
-- **Amarelo Sombra** (`amarelo-sombra` `#D99E00`): lábio do botão amarelo.
-- **Amarelo Claro** (`amarelo-claro` `#FFF3D6`): balão de fala da pessoa, aviso ameno.
+O anel de foco precisa ser escuro justamente porque metade das superfícies
+clicáveis é amarela: um anel amarelo desapareceria nelas.
 
-### Tertiary
+### Erro sem vermelho de semáforo
 
-- **Alerta** (`alerta` `#D32F2F`): erro. Fundo `alerta-claro`.
-- **Feito** (`feito` `#2E7D32`): só status concluído.
+`alerta` é um terracota escuro (`#8a2f00`) — quente, portanto ainda dentro da
+família, e escuro o bastante para passar contraste nos dois sentidos. "Feito"
+não tem verde: é `sol-800` com ícone de check.
 
-### Neutral
+---
 
-- **Papel** (`papel`): canvas.
-- **Areia** (`areia`): cartões, botão inativo, balão do sistema.
-- **Tinta / Tinta Suave**: texto principal e secundário.
-- **Linha Forte**: borda de campo. **Linha Suave**: separador decorativo — nunca borda de input.
+## 2. Acabamento: clean, não relevo
 
-### Named Rules
+Bordas de **1px**, raio de 10px, sem sombra projetada, sem borda inferior
+sólida, sem gradiente. O que sinaliza "isto é clicável" é o **tamanho do alvo**
+e o **contraste do rótulo**, não a espessura da moldura.
 
-**Dois papéis.** Azul avança. Amarelo é voz (ou a outra porta na escolha). Não misturar no mesmo controle.
-
-**Amarelo só como fundo.** Texto e ícone sobre amarelo são tinta escura. Amarelo sobre branco como texto é proibido.
-
-**Seleção nunca é só cor.** Fundo azul claro + borda 3px + marca ✓.
-
-Confirmed rejections: Duolingo green `#58CC02` as a button, neo-brutalist black offset, dark mode, yellow-to-blue gradient.
-
-## Typography
-
-**Display Font:** Nunito 800 (Trebuchet MS fallback)
-**Body Font:** Inter 400 / 700 (Segoe UI, system-ui)
-**Label/Mono Font:** none — labels use Inter
-
-**Character:** Two faces only. Nunito holds the logo and screen titles. Inter holds reading and buttons. No serif, no condensed UI, no uppercase tracking as a style.
-
-### Hierarchy
-
-- **Display / Headline** (Nunito 800, 1.875rem / 30px): Screen question (“Como você quer começar?”, wizard prompts). One per screen.
-- **Title** (Inter 700, 1.125–1.375rem): Default weight of `.btn` (22px on buttons).
-- **Body** (Inter 400, 1.25rem / 20px, 1.5): Page default, chat, helpers. Floor for 60+.
-- **Label** (Inter 400, 1.125rem / 18px): Smallest allowed size in the product (`--tv-txt-apoio`).
-
-### Named Rules
-
-**Two Faces.** Nunito 800 for titles. Inter 400/700 for everything else. Do not add Atkinson, a display serif, or a mono as the reading voice.
-
-**The Big Type Floor Rule.** Body is 20px. Support copy never drops below 18px. Do not ship 12px / 14px captions.
-
-## Layout
-
-A single centered column on paper white. Choice uses a narrow board (`max-width: 36rem`); wizard, chat, and home widen (`max-width: 42–56rem`). Horizontal inset is 1.25rem.
-
-First viewport: logo horizontal from the kit, one headline, two stacked full-width doors, then a muted helper. Wizard: header with symbol 48px, progress in azul, one question, primary action at the bottom. Chat: transcript grows; composer sticks to the bottom. Home: symbol + greeting, then voice search.
-
-Touch floor is 64px on continue, send, option rows, and fields. Choice doors are 7rem.
-
-### Named Rules
-
-**The One Question Rule.** A lesson screen shows one prompt. Do not dump the profile into a multi-field login card.
-
-## Elevation & Depth
-
-Paper plus pressable keys. No drop shadows. Depth is a 4px solid lip (`box-shadow: 0 4px 0 <sombra>`). On press, `translateY(4px)` and the lip disappears. Focus is a 4px `azul-sombra` ring with 3px offset.
-
-If `prefers-reduced-motion: reduce`, drop the 120ms transition; the press still may fire.
-
-### Named Rules
-
-**The Soft Lip Rule.** Depth is a 4px colored bottom edge. Never a 3px black offset, never a blur shadow, never a sharp neo-brutal slab.
-
-## Shapes
-
-Controls are 16px radius. Fields are 12px. Never a live corner, never a full pill on a button. Chat bubbles are 16px with the inner corner pulled in. Progress track is rounded 16px, fill azul.
-
-### Named Rules
-
-**The Sixteen Rule.** Interactive chrome is 16px radius. Do not sharpen to 0–4px, and do not balloon primary buttons into full pills.
-
-## Components
-
-### Buttons
-
-16px radius, Inter 700, 22px type, 4px lip, 120ms press. Disabled is areia fill + tinta suave, no lip.
-
-- **Primary (azul):** Avançar, continuar, criar conta, enviar, buscar. White type. Lip `azul-sombra`.
-- **Voice (amarelo):** Falar, and on the first screen the Conversar door. Ink type. Lip `amarelo-sombra`. Max one yellow control per screen.
-- **Ghost:** Paper fill, `linha-forte` lip, ink type. Voltar, limpar, unselected options.
-- **Chip on:** `azul-claro` fill + 3px azul inset + ✓. Selected marital row, Sim/Não, hobby, language.
-- **Hover / Focus:** No hover recolor. `:active` presses down. `:focus-visible` is the azul-sombra ring.
-- **Warn:** `alerta-claro` wash, alerta type. Error / stop listening. Not a third action color.
-
-### Chips
-
-Hobby and option rows are full buttons, not tiny tags. Unselected = ghost. Selected = chip-on + check. Do not use color alone.
-
-### Cards / Containers
-
-Signup canvas is paper — no card chrome around the form. Home voice block and result cards sit on areia, no drop shadow.
-
-### Inputs / Fields
-
-- **Style:** Paper fill, 2px `linha-forte` stroke, 12px radius, 20px type, min height 64px.
-- **Focus:** Stroke turns azul; the same 4px ring as buttons.
-- **Error:** The field does not turn red. A warn banner appears below.
-
-### Navigation
-
-Header: ghost Voltar, 48px símbolo, muted note. Wizard progress is azul on areia. Logo on the first screen is the horizontal lockup from the kit. No hamburger, no icon-only back.
-
-### Lesson Door
-
-Two stacked full-width keys, 7rem min height. Azul = Passo a passo. Amarelo = Conversar. Equal weight.
-
-### Chat Bubble
-
-Two speakers, always labeled. Travely sits left: 48px símbolo + the word “Travely”, bubble on areia. The traveler sits right: 48px person silhouette on areia + “Você” (then first name after they say it), bubble on amarelo-claro. Composer repeats the traveler avatar beside the field so the person knows that box is their turn. Max ~40ch. No emoji, no unlabeled glyph.
-
-## Do's and Don'ts
-
-### Do:
-
-- **Do** keep the canvas paper (`papel`) and body type at 20px Inter.
-- **Do** use azul to continue and amarelo only for voice / the other door.
-- **Do** give filled keys a 4px lip in the shadow sibling, and press with `translateY(4px)`.
-- **Do** show one question per wizard step, with 64px-tall targets.
-- **Do** mark selection with azul-claro + 3px azul border + ✓.
-
-### Don't:
-
-- **Don't** use Duolingo green `#58CC02` as a button, or a neo-brutalist 3px black offset.
-- **Don't** center a login card or pack name/email/password into one slab.
-- **Don't** add drop shadows, glass, dark mode, or a yellow-to-blue gradient.
-- **Don't** ship captions below 18px.
-- **Don't** put yellow type on white, or more than one yellow control per screen.
+Sombra só existe em um lugar (`--tv-sombra-leve`, `0 1px 2px` a 4% de opacidade)
+e serve para separar o cartão do fundo, não para dar volume.
+
+---
+
+## 3. Escala, alvo e alinhamento
+
+| Papel           | Token               | Tamanho                  |
+| --------------- | ------------------- | ------------------------ |
+| Título de tela  | `--tv-txt-titulo-g` | 32px                     |
+| Título de seção | `--tv-txt-titulo`   | 26px                     |
+| Corpo           | `--tv-txt-corpo`    | 20px                     |
+| Apoio           | `--tv-txt-apoio`    | 18px — **piso absoluto** |
+| Botão           | `--tv-txt-botao`    | 19px                     |
+
+Altura de linha 1,6. **Alvo mínimo de 56px** (`--tv-alvo-min`), acima dos 44px
+exigidos pela WCAG 2.2 — tremor e imprecisão de toque aumentam com a idade.
+
+Tipografia: **Nunito** na marca e nos títulos, **Inter** no corpo. Inter separa
+`I` maiúsculo de `l` minúsculo de `1`, o detalhe que decide se a pessoa digita
+o email certo.
+
+**Todo o conteúdo é centralizado** — texto, campos, botões e cartões, em todas
+as telas.
+
+---
+
+## 4. Componentes
+
+| Componente                 | Arquivo              | Nota                                                      |
+| -------------------------- | -------------------- | --------------------------------------------------------- |
+| `Button`                   | `ui/Button.tsx`      | Tons: `sol` (primário), `claro`, `nu`, `alerta`           |
+| `TextField`                | `ui/TextField.tsx`   | Rótulo sempre visível; erro ligado por `aria-describedby` |
+| `OptionList` / `MultiList` | `ui/OptionList.tsx`  | `radiogroup` e `checkbox` em cartões grandes              |
+| `Check`                    | `ui/Check.tsx`       | Marca de seleção — o sinal que não depende de cor         |
+| `Counter`                  | `ui/Counter.tsx`     | Dois botões grandes no lugar de `input[type=number]`      |
+| `Callout`                  | `ui/Callout.tsx`     | Erro (triângulo) e aviso (círculo), com `role` correto    |
+| `ProgressBar`              | `ui/ProgressBar.tsx` | Barra **mais** "Pergunta 3 de 7" por extenso              |
+
+### Regras de estado
+
+- **Selecionado** carrega três sinais somados: fundo `sol-100`, borda `sol-700`
+  e a marca de seleção. Cor sozinha não diz nada.
+- **Inativo** é superfície `areia` com texto `tinta-suave` — nunca opacidade,
+  que derrubaria o contraste do rótulo junto com o do fundo.
+- **Erro** é ícone + o que houve + o que fazer. Nunca só a cor da borda.
+- A borda continua com 1px nos dois estados do item de opção, para que ele não
+  "pule" de tamanho ao ser escolhido.
+
+---
+
+## 5. Os dois modelos de cadastro
+
+O `/entrar` oferece **dois fluxos que coletam exatamente os mesmos sete campos**:
+
+- **Passo a passo** (`WizardSignup`) — uma pergunta por tela, barra de progresso.
+- **Conversando** (`ChatSignup`) — balões de mensagem, o assistente pergunta e a
+  pessoa responde.
+
+Isso é deliberado: os dois existem para serem comparados em teste com usuários
+reais antes de escolher um. Por isso ambos usam a mesma casca (`EntrarShell`) —
+topo, largura de leitura e posição da ação principal idênticos —, de modo que a
+diferença medida seja o modelo de interação, e não a moldura.
+
+Trocar de modelo zera o rascunho: carregar respostas de um para o outro
+falsearia a comparação.
+
+---
+
+## 6. O que não fazer
+
+1. **Amarelo médio (`sol-400`/`500`) como texto, ícone fino ou borda de 1px.**
+   Existe só como fundo.
+2. **Texto branco sobre amarelo.** Sobre qualquer amarelo o texto é `tinta`.
+3. **Anel de foco claro.** O foco é sempre `sol-800`.
+4. **Cor sozinha comunicando estado.** Sempre acompanhada de ícone, texto ou
+   marca de seleção.
+5. **Opacidade para apagar controle desativado.**
+6. **Cores embutidas do Tailwind** (`blue-500`, `gray-700`…). Toda cor é um
+   degrau da rampa Sol, exposto via `@theme inline`.
+7. **Tela inteira de amarelo saturado.** O fundo é sempre `papel` ou `areia`.
+8. **Texto abaixo de 18px.**
+9. **Travar o zoom** (`maximum-scale`). É o recurso de acessibilidade mais usado
+   por quem tem visão reduzida.
+10. **Modo escuro.** Não existe versão invertida desta paleta.
+
+---
+
+## 7. Acessibilidade — o que já está no código
+
+- `lang="pt-BR"`, link "Pular para o conteúdo" como primeiro tab de toda tela.
+- Foco movido para a pergunta nova a cada passo do wizard, e para os resultados
+  quando a busca responde — sem isso, quem usa teclado ou leitor de tela não
+  fica sabendo que a tela mudou.
+- Conversa marcada com `role="log"` e `aria-live="polite"`; cada balão diz
+  "Você:" ou "Travely:" para leitor de tela, já que lado e cor não chegam nele.
+- `prefers-reduced-motion` desliga as animações — inclusive a pausa de digitação
+  do chat, que vai a zero.
+- Mensagens de erro em português, dizendo o que fazer em seguida (o hook de voz
+  devolvia `service-not-allowed` cru).
+- Enums do backend (`beach`, `December`, `low`) traduzidos antes de chegar à
+  tela.

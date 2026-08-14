@@ -1,9 +1,15 @@
 "use client";
 
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
-import { EntrarField } from "@/components/entrar/EntrarField";
-import { EntrarHeader } from "@/components/entrar/EntrarHeader";
+import { EntrarShell } from "@/components/entrar/EntrarShell";
+import { IconPin } from "@/components/icons";
+import { Button } from "@/components/ui/Button";
+import { Callout } from "@/components/ui/Callout";
+import { Counter } from "@/components/ui/Counter";
+import { MultiList, OptionList } from "@/components/ui/OptionList";
+import { TextField } from "@/components/ui/TextField";
 import {
   HOBBY_CHIPS,
   LIMITS,
@@ -13,7 +19,12 @@ import {
 } from "@/lib/profile";
 import { lookupPlace } from "@/services/api";
 
-const WIZARD_TOTAL = 7;
+const TOTAL = 7;
+
+const SIM_NAO = [
+  { id: "nao" as const, label: "Não tenho" },
+  { id: "sim" as const, label: "Sim, tenho" },
+];
 
 export function WizardSignup({
   profile,
@@ -26,12 +37,14 @@ export function WizardSignup({
   onFinish: (next: TravelyProfile) => void;
   onBack: () => void;
 }) {
+  const reduce = useReducedMotion();
   const [step, setStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
   const [hobbyExtra, setHobbyExtra] = useState("");
   const [busy, setBusy] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const passoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     return () => {
@@ -39,8 +52,16 @@ export function WizardSignup({
     };
   }, []);
 
-  function wizardNext() {
+  /** Cada passo troca o conteúdo sem trocar de URL, então o foco ficaria preso
+   *  no botão do passo anterior. Movê-lo para o topo faz o leitor de tela
+   *  anunciar a pergunta nova. */
+  useEffect(() => {
+    passoRef.current?.focus();
+  }, [step]);
+
+  function next() {
     if (busy) return;
+
     const extra = hobbyExtra.trim().slice(0, LIMITS.hobby);
     const withExtra =
       step === 7 && extra
@@ -52,13 +73,15 @@ export function WizardSignup({
             ),
           }
         : profile;
+
     const message = validateWizardStep(step, withExtra);
     if (message) {
       setError(message);
       return;
     }
+
     setError(null);
-    if (step === WIZARD_TOTAL) {
+    if (step === TOTAL) {
       setBusy(true);
       onFinish(withExtra);
       return;
@@ -68,7 +91,9 @@ export function WizardSignup({
 
   function fillLocation() {
     if (!navigator.geolocation) {
-      setError("Este aparelho não informa localização. Pode escrever.");
+      setError(
+        "Este aparelho não informa a localização. Pode escrever abaixo.",
+      );
       return;
     }
     abortRef.current?.abort();
@@ -76,15 +101,17 @@ export function WizardSignup({
     abortRef.current = controller;
     setLocating(true);
     setError(null);
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
-          const place = await lookupPlace(
-            position.coords.latitude,
-            position.coords.longitude,
-            controller.signal,
+          onPatch(
+            await lookupPlace(
+              position.coords.latitude,
+              position.coords.longitude,
+              controller.signal,
+            ),
           );
-          onPatch(place);
         } catch (caught) {
           if (caught instanceof DOMException && caught.name === "AbortError") {
             return;
@@ -107,274 +134,241 @@ export function WizardSignup({
   }
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-2xl flex-col px-5 py-8">
-      <EntrarHeader
-        onBack={() => {
-          if (step === 1) {
-            onBack();
-            return;
-          }
-          setError(null);
-          setStep((current) => current - 1);
-        }}
-        note={`Pergunta ${step} de ${WIZARD_TOTAL}`}
-        progress={step / WIZARD_TOTAL}
-      />
-
+    <EntrarShell
+      modo="Passo a passo"
+      progresso={{ atual: step, total: TOTAL }}
+      onBack={() => {
+        if (step === 1) {
+          onBack();
+          return;
+        }
+        setError(null);
+        setStep((current) => current - 1);
+      }}
+      rodape={
+        <Button
+          tom="sol"
+          largo
+          type="submit"
+          form="wizard"
+          disabled={busy || locating}
+        >
+          {step === TOTAL ? "Criar minha conta" : "Continuar"}
+        </Button>
+      }
+    >
       <form
-        className="mt-10 flex flex-1 flex-col"
+        id="wizard"
+        className="w-full"
         onSubmit={(event) => {
           event.preventDefault();
-          wizardNext();
+          next();
         }}
       >
-        {step === 1 && (
-          <EntrarField
-            id="name"
-            label="Qual é o seu nome?"
-            value={profile.name}
-            autoComplete="name"
-            maxLength={LIMITS.name}
-            onChange={(value) => onPatch({ name: value })}
-          />
-        )}
-        {step === 2 && (
-          <EntrarField
-            id="email"
-            label="Qual é o seu email?"
-            type="email"
-            value={profile.email}
-            autoComplete="email"
-            maxLength={LIMITS.email}
-            onChange={(value) => onPatch({ email: value })}
-          />
-        )}
-        {step === 3 && (
-          <EntrarField
-            id="birthDate"
-            label="Qual é a sua data de nascimento?"
-            type="date"
-            value={profile.birthDate}
-            onChange={(value) => onPatch({ birthDate: value })}
-          />
-        )}
-        {step === 4 && (
-          <fieldset>
-            <legend className="font-display text-[1.875rem] font-extrabold leading-tight">
-              Onde você mora?
-            </legend>
-            <button
-              type="button"
-              className="btn btn-ghost mt-6 px-4 py-3 text-lg"
-              onClick={fillLocation}
-              disabled={locating}
-            >
-              {locating ? "Procurando…" : "Usar minha localização"}
-            </button>
-            <div className="mt-6 grid gap-5">
-              <EntrarField
-                id="city"
-                label="Cidade"
-                compact
-                value={profile.city}
-                autoComplete="address-level2"
-                maxLength={LIMITS.place}
-                onChange={(value) => onPatch({ city: value })}
-              />
-              <EntrarField
-                id="state"
-                label="Estado"
-                compact
-                value={profile.state}
-                autoComplete="address-level1"
-                maxLength={LIMITS.place}
-                onChange={(value) => onPatch({ state: value })}
-              />
-              <EntrarField
-                id="country"
-                label="País"
-                compact
-                value={profile.country}
-                autoComplete="country-name"
-                maxLength={LIMITS.place}
-                onChange={(value) => onPatch({ country: value })}
-              />
-            </div>
-          </fieldset>
-        )}
-        {step === 5 && (
-          <fieldset>
-            <legend className="font-display text-[1.875rem] font-extrabold leading-tight">
-              Qual é o seu estado civil?
-            </legend>
-            <div className="mt-8 grid gap-3">
-              {MARITAL_OPTIONS.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  className={`btn min-h-16 px-4 py-3 text-left text-xl ${
-                    profile.maritalStatus === option.id
-                      ? "chip-on"
-                      : "btn-ghost"
-                  }`}
-                  onClick={() => onPatch({ maritalStatus: option.id })}
-                  aria-pressed={profile.maritalStatus === option.id}
-                >
-                  {profile.maritalStatus === option.id ? "✓ " : ""}
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-        )}
-        {step === 6 && (
-          <fieldset>
-            <legend className="font-display text-[1.875rem] font-extrabold leading-tight">
-              Você tem filhos menores?
-            </legend>
-            <div className="mt-8 flex gap-4">
-              <button
-                type="button"
-                className={`btn min-h-16 flex-1 text-xl ${
-                  profile.hasMinorChildren ? "btn-ghost" : "chip-on"
-                }`}
-                onClick={() =>
-                  onPatch({ hasMinorChildren: false, minorChildrenCount: 0 })
-                }
-                aria-pressed={!profile.hasMinorChildren}
+        <motion.div
+          key={step}
+          ref={passoRef}
+          tabIndex={-1}
+          initial={reduce ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          className="flex w-full flex-col items-center text-center outline-none"
+        >
+          {step === 1 && (
+            <TextField
+              id="name"
+              label="Qual é o seu nome?"
+              hint="Como as pessoas te chamam."
+              placeholder="Maria Silva"
+              value={profile.name}
+              autoComplete="name"
+              maxLength={LIMITS.name}
+              onChange={(value) => onPatch({ name: value })}
+            />
+          )}
+
+          {step === 2 && (
+            <TextField
+              id="email"
+              label="Qual é o seu email?"
+              hint="A gente usa só para achar a sua conta depois."
+              placeholder="maria@email.com"
+              type="email"
+              value={profile.email}
+              autoComplete="email"
+              maxLength={LIMITS.email}
+              onChange={(value) => onPatch({ email: value })}
+            />
+          )}
+
+          {step === 3 && (
+            <TextField
+              id="birthDate"
+              label="Quando você nasceu?"
+              hint="Dia, mês e ano."
+              type="date"
+              value={profile.birthDate}
+              autoComplete="bday"
+              onChange={(value) => onPatch({ birthDate: value })}
+            />
+          )}
+
+          {step === 4 && (
+            <fieldset className="flex w-full flex-col items-center">
+              <legend className="font-display text-titulo">
+                Onde você mora?
+              </legend>
+              <p className="mt-2 text-apoio text-suave">
+                Use a localização do aparelho ou escreva você mesmo.
+              </p>
+
+              <Button
+                className="mt-5"
+                onClick={fillLocation}
+                disabled={locating}
               >
-                Não
-                {!profile.hasMinorChildren ? " ✓" : ""}
-              </button>
-              <button
-                type="button"
-                className={`btn min-h-16 flex-1 text-xl ${
-                  profile.hasMinorChildren ? "chip-on" : "btn-ghost"
-                }`}
-                onClick={() =>
-                  onPatch({
-                    hasMinorChildren: true,
-                    minorChildrenCount: Math.max(1, profile.minorChildrenCount),
-                  })
-                }
-                aria-pressed={profile.hasMinorChildren}
-              >
-                Sim
-                {profile.hasMinorChildren ? " ✓" : ""}
-              </button>
-            </div>
-            {profile.hasMinorChildren && (
-              <div className="mt-8">
-                <p className="text-xl font-bold" id="children-count-label">
-                  Quantos?
-                </p>
-                <div className="mt-4 flex items-center gap-4">
-                  <button
-                    type="button"
-                    className="btn btn-ghost h-16 w-16 text-3xl"
-                    onClick={() =>
-                      onPatch({
-                        minorChildrenCount: Math.max(
-                          1,
-                          profile.minorChildrenCount - 1,
-                        ),
-                      })
-                    }
-                    aria-label="Diminuir"
-                  >
-                    −
-                  </button>
-                  <p
-                    className="min-w-12 text-center text-4xl font-bold"
-                    aria-labelledby="children-count-label"
-                  >
-                    {profile.minorChildrenCount}
-                  </p>
-                  <button
-                    type="button"
-                    className="btn btn-ghost h-16 w-16 text-3xl"
-                    onClick={() =>
-                      onPatch({
-                        minorChildrenCount: Math.min(
-                          LIMITS.children,
-                          profile.minorChildrenCount + 1,
-                        ),
-                      })
-                    }
-                    aria-label="Aumentar"
-                  >
-                    +
-                  </button>
-                </div>
+                <IconPin className="h-5 w-5" />
+                {locating ? "Procurando…" : "Usar minha localização"}
+              </Button>
+
+              <div className="mt-8 grid w-full gap-6 sm:grid-cols-2">
+                <TextField
+                  id="city"
+                  label="Cidade"
+                  compacto
+                  placeholder="Campinas"
+                  value={profile.city}
+                  autoComplete="address-level2"
+                  maxLength={LIMITS.place}
+                  onChange={(value) => onPatch({ city: value })}
+                />
+                <TextField
+                  id="state"
+                  label="Estado"
+                  compacto
+                  placeholder="São Paulo"
+                  value={profile.state}
+                  autoComplete="address-level1"
+                  maxLength={LIMITS.place}
+                  onChange={(value) => onPatch({ state: value })}
+                />
               </div>
-            )}
-          </fieldset>
-        )}
-        {step === 7 && (
-          <fieldset>
-            <legend className="font-display text-[1.875rem] font-extrabold leading-tight">
-              O que você gosta de fazer?
-            </legend>
-            <div className="mt-8 flex flex-wrap gap-3">
-              {HOBBY_CHIPS.map((hobby) => {
-                const on = profile.hobbies.includes(hobby);
-                return (
-                  <button
-                    key={hobby}
-                    type="button"
-                    className={`btn px-4 py-3 text-lg ${
-                      on ? "chip-on" : "btn-ghost"
-                    }`}
-                    aria-pressed={on}
-                    onClick={() =>
-                      onPatch({
-                        hobbies: on
-                          ? profile.hobbies.filter((item) => item !== hobby)
-                          : [...profile.hobbies, hobby].slice(
-                              0,
-                              LIMITS.hobbies,
-                            ),
-                      })
-                    }
-                  >
-                    {on ? "✓ " : ""}
-                    {hobby}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-6">
-              <EntrarField
-                id="hobbyExtra"
-                label="Outro, se quiser"
-                compact
-                value={hobbyExtra}
-                maxLength={LIMITS.hobby}
-                onChange={setHobbyExtra}
-              />
-            </div>
-          </fieldset>
-        )}
+              <div className="mt-6 w-full">
+                <TextField
+                  id="country"
+                  label="País"
+                  compacto
+                  placeholder="Brasil"
+                  value={profile.country}
+                  autoComplete="country-name"
+                  maxLength={LIMITS.place}
+                  onChange={(value) => onPatch({ country: value })}
+                />
+              </div>
+            </fieldset>
+          )}
 
-        {error && (
-          <p
-            role="alert"
-            className="btn-warn mt-6 rounded-2xl px-4 py-3 text-left text-lg"
-          >
-            {error}
-          </p>
-        )}
+          {step === 5 && (
+            <fieldset className="flex w-full flex-col items-center">
+              <legend className="font-display text-titulo">
+                Qual é o seu estado civil?
+              </legend>
+              <p className="mt-2 text-apoio text-suave">
+                Escolha o que vale para você hoje.
+              </p>
+              <div className="mt-8 w-full">
+                <OptionList
+                  legend="Estado civil"
+                  options={MARITAL_OPTIONS}
+                  value={profile.maritalStatus}
+                  onChange={(id) => onPatch({ maritalStatus: id })}
+                  colunas
+                />
+              </div>
+            </fieldset>
+          )}
 
-        <div className="mt-auto flex gap-4 pt-10">
-          <button
-            type="submit"
-            className="btn btn-primary min-h-16 flex-1 text-2xl"
-            disabled={busy || locating}
-          >
-            {step === WIZARD_TOTAL ? "Criar conta" : "Continuar"}
-          </button>
-        </div>
+          {step === 6 && (
+            <fieldset className="flex w-full flex-col items-center">
+              <legend className="font-display text-titulo">
+                Você tem filhos menores de 18 anos?
+              </legend>
+              <p className="mt-2 text-apoio text-suave">
+                Isso ajuda a sugerir viagens com a companhia certa.
+              </p>
+              <div className="mt-8 w-full">
+                <OptionList
+                  legend="Filhos menores"
+                  options={SIM_NAO}
+                  value={profile.hasMinorChildren ? "sim" : "nao"}
+                  onChange={(id) =>
+                    onPatch({
+                      hasMinorChildren: id === "sim",
+                      minorChildrenCount:
+                        id === "sim"
+                          ? Math.max(1, profile.minorChildrenCount)
+                          : 0,
+                    })
+                  }
+                />
+              </div>
+              {profile.hasMinorChildren && (
+                <div className="mt-8">
+                  <Counter
+                    label="Quantos filhos"
+                    value={profile.minorChildrenCount}
+                    min={1}
+                    max={LIMITS.children}
+                    onChange={(value) => onPatch({ minorChildrenCount: value })}
+                  />
+                </div>
+              )}
+            </fieldset>
+          )}
+
+          {step === 7 && (
+            <fieldset className="flex w-full flex-col items-center">
+              <legend className="font-display text-titulo">
+                O que você gosta de fazer?
+              </legend>
+              <p className="mt-2 text-apoio text-suave">
+                Marque quantos quiser. Isso guia as sugestões de viagem.
+              </p>
+              <div className="mt-8 w-full">
+                <MultiList
+                  legend="Hobbies"
+                  options={HOBBY_CHIPS}
+                  selected={profile.hobbies}
+                  onToggle={(hobby) =>
+                    onPatch({
+                      hobbies: profile.hobbies.includes(hobby)
+                        ? profile.hobbies.filter((item) => item !== hobby)
+                        : [...profile.hobbies, hobby].slice(0, LIMITS.hobbies),
+                    })
+                  }
+                />
+              </div>
+              <div className="mt-8 w-full">
+                <TextField
+                  id="hobbyExtra"
+                  label="Outro, se quiser"
+                  compacto
+                  placeholder="Pesca"
+                  value={hobbyExtra}
+                  maxLength={LIMITS.hobby}
+                  onChange={setHobbyExtra}
+                />
+              </div>
+            </fieldset>
+          )}
+
+          {error && (
+            <div className="mt-6 w-full">
+              <Callout tom="erro">{error}</Callout>
+            </div>
+          )}
+        </motion.div>
       </form>
-    </main>
+    </EntrarShell>
   );
 }

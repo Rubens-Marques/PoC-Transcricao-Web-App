@@ -33,50 +33,62 @@ export function PackageCard({ recommendation }: PackageCardProps) {
   } = recommendation;
 
   return (
-    <article className="flex flex-col rounded-2xl bg-sand p-6">
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="font-display text-xl font-extrabold">{name}</h3>
-        <span className="shrink-0 rounded-2xl bg-blue-soft px-3 py-1 text-lg font-bold text-ink">
-          {CATEGORY_LABELS[category] ?? category}
-        </span>
-      </div>
+    <article className="tv-placa flex flex-col items-center p-6 text-center">
+      <span className="rounded-full border border-sol-200 bg-sol-100 px-3 py-1 text-apoio">
+        {CATEGORY_LABELS[category] ?? category}
+      </span>
 
-      <p className="mt-2 text-lg text-muted">
+      <h3 className="mt-4 font-display text-titulo">{name}</h3>
+
+      <p className="mt-1 text-apoio text-suave">
         {destination} — {country}
       </p>
 
-      <p className="mt-3 text-xl leading-relaxed">{description}</p>
+      <p className="mt-4 text-corpo">{description}</p>
 
-      <dl className="mt-4 grid grid-cols-3 gap-3 border-t border-line pt-4 text-lg">
+      {/* Preço em destaque próprio: é o dado que decide a leitura do cartão. */}
+      <p className="mt-6 font-display text-titulo">{currency.format(price)}</p>
+
+      <dl className="mt-5 grid w-full grid-cols-2 gap-4 border-t border-linha pt-5 text-apoio">
         <div>
-          <dt className="text-muted">Duração</dt>
-          <dd className="mt-0.5 font-bold">
+          <dt className="text-suave">Duração</dt>
+          <dd className="mt-1 text-corpo">
             {days} {days === 1 ? "dia" : "dias"}
           </dd>
         </div>
         <div>
-          <dt className="text-muted">Até</dt>
-          <dd className="mt-0.5 font-bold">
+          <dt className="text-suave">Cabem até</dt>
+          <dd className="mt-1 text-corpo">
             {maxPeople} {maxPeople === 1 ? "pessoa" : "pessoas"}
           </dd>
-        </div>
-        <div>
-          <dt className="text-muted">Preço</dt>
-          <dd className="mt-0.5 font-bold">{currency.format(price)}</dd>
         </div>
       </dl>
 
       {matchReasons.length > 0 && (
-        <ul className="mt-4 flex flex-wrap gap-2">
-          {matchReasons.map((reason) => (
-            <li
-              key={reason}
-              className="rounded-2xl bg-blue-soft px-3 py-1 text-lg font-bold"
-            >
-              {reason}
-            </li>
-          ))}
-        </ul>
+        <div className="mt-6 w-full">
+          <h4 className="text-apoio text-suave">Por que combina com você</h4>
+          <ul className="mt-3 flex flex-col items-center gap-2">
+            {matchReasons.map((reason) => (
+              <li key={reason} className="flex items-center gap-2 text-apoio">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 shrink-0 text-sol-700"
+                  aria-hidden
+                >
+                  <path
+                    d="m5 12.5 4.5 4.5L19 7"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {reason}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </article>
   );
