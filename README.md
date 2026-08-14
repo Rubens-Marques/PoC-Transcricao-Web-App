@@ -86,12 +86,16 @@ POC/
 │   ├── requirements.txt
 │   ├── .env.example
 │   ├── routes/
-│   │   └── recommendations.py      # POST /api/recommendations
+│   │   ├── recommendations.py      # POST /api/recommendations
+│   │   ├── place.py                # POST /api/place
+│   │   └── signup.py               # POST /api/signup/interpret
 │   ├── services/
 │   │   ├── llm_service.py          # extract_travel_preferences(text)
+│   │   ├── signup_service.py       # interpret_signup_answer(field, text)
 │   │   └── search_service.py       # pontuação determinística
 │   ├── models/
-│   │   └── travel.py               # contratos Pydantic
+│   │   ├── travel.py               # contratos Pydantic
+│   │   └── signup.py               # contratos do cadastro conversado
 │   ├── database/
 │   │   ├── db.py                   # conexão + schema
 │   │   └── seed.py                 # 35 pacotes em 10 países
@@ -264,6 +268,60 @@ ranking auditável, que é boa parte do propósito de uma demonstração de PoC.
 | `422`  | `text` ausente, vazio ou acima de 1000 caracteres                      |
 | `502`  | O LLM respondeu mas a resposta era inutilizável (ou ele recusou)       |
 | `503`  | O provider de LLM está mal configurado — ex.: `LLM_API_KEY` não setada |
+
+### `POST /api/signup/interpret`
+
+Entende **uma** resposta do cadastro conversado. O cliente diz qual pergunta
+fez; o serviço devolve só o que aquela pergunta pede.
+
+**Requisição**
+
+```json
+{ "field": "maritalStatus", "text": "casado há 20 anos" }
+```
+
+| Campo   | Tipo   | Restrições                                                                     |
+| ------- | ------ | ------------------------------------------------------------------------------ |
+| `field` | enum   | `name` `email` `birthDate` `place` `maritalStatus` `children` `hobbies`        |
+| `text`  | string | 1 a 280 caracteres (o mesmo teto do campo de conversa no cliente)              |
+
+**Resposta `200`**
+
+```json
+{
+  "answer": {
+    "full_name": null,
+    "email": null,
+    "birth_date": null,
+    "age": null,
+    "city": null,
+    "state": null,
+    "country": null,
+    "marital_status": "casado",
+    "has_minor_children": null,
+    "minor_children_count": null,
+    "hobbies": []
+  }
+}
+```
+
+Todo campo é opcional: a resposta pode não conter o que foi perguntado, e
+inventar valor seria pior do que reperguntar. O cliente valida o que chega
+(email, data) antes de gravar no perfil.
+
+Diferente das preferências de viagem, os valores aqui saem em **português** —
+é o cadastro da própria pessoa, exibido para ela.
+
+**Erros**
+
+| Status | Quando                                                     |
+| ------ | ---------------------------------------------------------- |
+| `422`  | `field` desconhecido, ou `text` vazio/acima de 280          |
+| `502`  | O modelo respondeu algo inutilizável                        |
+| `503`  | Provider mal configurado ou Ollama fora do ar               |
+
+Se este endpoint falhar, o cliente **não** interrompe o cadastro: cai no parser
+local e a pessoa termina o que começou.
 
 ### `GET /health`
 
