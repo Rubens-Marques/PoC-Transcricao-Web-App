@@ -183,6 +183,9 @@ export function ChatSignup({
       applied = applyInterpretedAnswer(field, answer, profile);
     } catch (caught) {
       if (caught instanceof DOMException && caught.name === "AbortError") {
+        // Sair sem baixar o `typing` deixaria o indicador aceso e o campo
+        // travado para sempre — o chat morreria de pé.
+        setTyping(false);
         return;
       }
       // O modelo caiu. O cadastro não pode cair junto: o parser local resolve
