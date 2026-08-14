@@ -177,8 +177,8 @@ export function WizardSignup({
           {step === 1 && (
             <TextField
               id="name"
-              label="Qual é o seu nome?"
-              hint="Como as pessoas te chamam."
+              label="Qual o seu nome completo?"
+              hint="Nome e sobrenome."
               placeholder="Maria Silva"
               value={profile.name}
               autoComplete="name"

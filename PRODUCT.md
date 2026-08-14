@@ -58,7 +58,8 @@ Restrições confirmadas:
 - Cadastro nesta PoC é wizard (um passo de cada vez) **e** um segundo modelo conversacional; os dois coletam os mesmos dados.
 - Compartilhar dicas (fotos e vídeos curtos) não deve exigir um perfil social rico; o cadastro existe para conhecer a pessoa, não para ela “se apresentar” como em rede social.
 - Tema claro, tipografia grande, leitura em primeiro lugar.
-- Nome do produto: **undecided**.
+- Nome do produto: **Brio**.
+- Wordmark em curvas (Nunito). Nome: Brio; o símbolo (sol, horizonte e reflexo) não depende do nome.
 
 Fora desta PoC de entrada: app nativo, pagamentos, reserva.
 
@@ -67,7 +68,7 @@ Fora desta PoC de entrada: app nativo, pagamentos, reserva.
 Kit de marca v1 **Manhã Clara** (arquivos em `frontend/public/brand/`):
 
 - Símbolo: sol, horizonte e reflexo, em campo azul. Sem globo, avião, mala ou pin.
-- Wordmark em curvas (Nunito). Nome de trabalho Travely; o símbolo não depende do nome.
+- Wordmark em curvas (Nunito). Nome: **Brio**. O símbolo não depende do nome.
 - Paleta: Papel `#FFFFFF`, Tinta `#1C1C1C`, Azul Horizonte `#0B5FBF` (avançar), Amarelo Manhã `#FFC02E` (voz; no máximo um por tela), Alerta `#D32F2F`. Verde `#2E7D32` só para status “feito”, nunca botão.
 - Tema claro único. Sem dark mode. Sem degradê amarelo–azul.
 - Tipo: Nunito 800 nos títulos; Inter 400/700 no corpo e botões. Corpo mínimo 20px. Alvo de toque 64px.

@@ -264,7 +264,7 @@
    * Os dois também diferem em posição e no rótulo lido por leitor de tela. */
 
   .tv-balao {
-    /* Âncora para o rótulo "Você:"/"Travely:", que é `position: absolute`.
+    /* Âncora para o rótulo "Você:"/"Brio:", que é `position: absolute`.
      * Sem isto ele se posiciona contra o documento, escapa do painel que rola
      * e estica a página inteira. */
     position: relative;

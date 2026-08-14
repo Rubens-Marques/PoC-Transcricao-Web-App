@@ -64,6 +64,16 @@ export const emptyProfile = (): TravelyProfile => ({
   hobbies: [],
 });
 
+/** Nome completo: pelo menos duas palavras. "Maria" não passa; "Maria Silva" passa. */
+export function isFullName(value: string): boolean {
+  const trimmed = value.trim();
+  if (trimmed.length < 3 || trimmed.length > LIMITS.name) return false;
+  const parts = trimmed
+    .split(/\s+/)
+    .filter((part) => part.replace(/[^\p{L}]/gu, "").length > 0);
+  return parts.length >= 2;
+}
+
 export function isValidEmail(value: string): boolean {
   const email = value.trim();
   if (email.length > LIMITS.email) return false;
@@ -110,7 +120,7 @@ export function parseStoredProfile(raw: unknown): TravelyProfile | null {
   const maritalStatus = data.maritalStatus;
   const hobbiesRaw = data.hobbies;
 
-  if (!name || name.length < 2) return null;
+  if (!name || !isFullName(name)) return null;
   if (!email || !isValidEmail(email)) return null;
   if (!birthDate || !isValidBirthDate(birthDate)) return null;
   if (!city || !state) return null;
@@ -198,8 +208,8 @@ export function validateWizardStep(
   step: number,
   profile: TravelyProfile,
 ): string | null {
-  if (step === 1 && clip(profile.name, LIMITS.name).length < 2) {
-    return "Escreva o nome completo, por favor.";
+  if (step === 1 && !isFullName(profile.name)) {
+    return "Escreva o nome completo, por favor. Nome e sobrenome.";
   }
   if (step === 2 && !isValidEmail(profile.email)) {
     return "Esse email parece incompleto. Falta o @ ou o resto depois dele.";

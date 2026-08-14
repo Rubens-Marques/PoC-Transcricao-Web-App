@@ -64,7 +64,7 @@ export default function HomePage() {
     return (
       <main className="flex min-h-svh items-center justify-center px-5">
         <p className="text-corpo text-suave" role="status">
-          Abrindo o Travely…
+          Abrindo o Brio…
         </p>
       </main>
     );

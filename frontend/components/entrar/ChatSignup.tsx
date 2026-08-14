@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { BotAvatar } from "@/components/entrar/BotAvatar";
 import { EntrarShell } from "@/components/entrar/EntrarShell";
 import { QuickAnswer } from "@/components/entrar/QuickAnswer";
+import { SignupReview } from "@/components/entrar/SignupReview";
 import { UserAvatar } from "@/components/entrar/UserAvatar";
 import { IconSend } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
@@ -36,7 +37,7 @@ function TypingIndicator() {
     >
       <BotAvatar />
       <div className="tv-balao tv-balao--bot inline-flex items-center gap-1.5 py-4">
-        <span className="sr-only">Travely está escrevendo</span>
+        <span className="sr-only">Brio está escrevendo</span>
         {[0, 1, 2].map((index) => (
           <motion.span
             key={index}
@@ -71,7 +72,7 @@ function MessageRow({ turn, name }: { turn: ChatTurn; name: string }) {
       {fromYou ? <UserAvatar name={name} /> : <BotAvatar />}
       <p className={`tv-balao ${fromYou ? "tv-balao--voce" : "tv-balao--bot"}`}>
         {/* Qual lado falou não pode depender só de alinhamento e cor. */}
-        <span className="sr-only">{fromYou ? "Você: " : "Travely: "}</span>
+        <span className="sr-only">{fromYou ? "Você: " : "Brio: "}</span>
         {turn.text}
       </p>
     </motion.li>
@@ -97,6 +98,7 @@ export function ChatSignup({
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [typing, setTyping] = useState(false);
+  const [review, setReview] = useState<TravelyProfile | null>(null);
   const [log, setLog] = useState<ChatTurn[]>([
     { id: "bot-0", from: "bot", text: CHAT_PROMPTS.name },
   ]);
@@ -136,9 +138,7 @@ export function ChatSignup({
     onProfile(nextProfile);
 
     if (fieldIndex === CHAT_ORDER.length - 1) {
-      setBusy(true);
-      push("bot", `Pronto, ${nextProfile.name}. Vou abrir a busca de viagem.`);
-      window.setTimeout(() => onFinish(nextProfile), 900);
+      setReview(nextProfile);
       return;
     }
 
@@ -209,6 +209,28 @@ export function ChatSignup({
     settle(applyInterpretedAnswer(field, answer, profile));
   }
 
+  if (review) {
+    return (
+      <EntrarShell
+        modo="Conversando"
+        progresso={{ atual: CHAT_ORDER.length, total: CHAT_ORDER.length }}
+        onBack={onBack}
+        rodape={
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button tom="claro" largo onClick={onBack}>
+              Refazer o cadastro
+            </Button>
+            <Button tom="sol" largo onClick={() => onFinish(review)}>
+              Confirmar
+            </Button>
+          </div>
+        }
+      >
+        <SignupReview profile={review} />
+      </EntrarShell>
+    );
+  }
+
   return (
     <EntrarShell
       modo="Conversando"
@@ -261,7 +283,7 @@ export function ChatSignup({
       <div
         ref={scrollRef}
         role="log"
-        aria-label="Conversa com o Travely"
+        aria-label="Conversa com o Brio"
         aria-live="polite"
         aria-relevant="additions"
         className="w-full min-h-0 flex-1 overflow-y-auto"

@@ -3,6 +3,7 @@ import {
   MARITAL_OPTIONS,
   isValidBirthDate,
   isValidEmail,
+  isFullName,
   type MaritalStatus,
   type TravelyProfile,
 } from "@/lib/profile";
@@ -126,7 +127,7 @@ export type ChatField =
   | "hobbies";
 
 export const CHAT_PROMPTS: Record<ChatField, string> = {
-  name: "Olá. Qual é o seu nome?",
+  name: "Olá. Qual o seu nome completo?",
   email: "Qual é o seu email?",
   birthDate: "Em que dia você nasceu? Pode dizer 15/03/1952, por exemplo.",
   place:
@@ -153,10 +154,10 @@ export function applyChatAnswer(
 ): { ok: true; profile: TravelyProfile } | { ok: false; message: string } {
   if (field === "name") {
     const name = text.trim().slice(0, LIMITS.name);
-    if (name.length < 2) {
+    if (!isFullName(name)) {
       return {
         ok: false,
-        message: "Não entendi o nome. Pode escrever de novo?",
+        message: "Pode escrever o nome completo, por favor? Nome e sobrenome.",
       };
     }
     return { ok: true, profile: { ...profile, name } };
@@ -248,8 +249,11 @@ export function applyInterpretedAnswer(
 ): { ok: true; profile: TravelyProfile } | { ok: false; message: string } {
   if (field === "name") {
     const name = (answer.full_name ?? "").trim().slice(0, LIMITS.name);
-    if (name.length < 2) {
-      return { ok: false, message: "Não peguei o nome. Pode escrever de novo?" };
+    if (!isFullName(name)) {
+      return {
+        ok: false,
+        message: "Pode escrever o nome completo, por favor? Nome e sobrenome.",
+      };
     }
     return { ok: true, profile: { ...profile, name } };
   }
@@ -289,7 +293,8 @@ export function applyInterpretedAnswer(
     if (!city) {
       return {
         ok: false,
-        message: "Pode dizer a cidade e o estado? Exemplo: Campinas, São Paulo.",
+        message:
+          "Pode dizer a cidade e o estado? Exemplo: Campinas, São Paulo.",
       };
     }
     return {
@@ -311,7 +316,10 @@ export function applyInterpretedAnswer(
           "Pode ser solteiro, casado, união estável, divorciado ou viúvo. Ou escolha aqui embaixo.",
       };
     }
-    return { ok: true, profile: { ...profile, maritalStatus: answer.marital_status } };
+    return {
+      ok: true,
+      profile: { ...profile, maritalStatus: answer.marital_status },
+    };
   }
 
   if (field === "children") {

@@ -118,11 +118,13 @@ com palavras escritas por extenso.
 Responda apenas com um objeto JSON do schema. Sem prosa, sem cercas de código."""
 
 FIELD_PROMPTS: dict[str, str] = {
-    "name": """Pergunta feita: "Qual é o seu nome?"
-Extraia só o nome, sem a frase em volta e sem saudação.
+    "name": """Pergunta feita: "Qual o seu nome completo?"
+Extraia o nome completo (nome e sobrenome), sem a frase em volta e sem saudação.
+Um só nome não basta: deixe full_name nulo.
 "meu nome é Maria Silva" -> {"full_name":"Maria Silva"}
-"olha, eu sou a Dona Cleusa" -> {"full_name":"Cleusa"}
-"pode me chamar de Zé" -> {"full_name":"Zé"}
+"olha, eu sou a Dona Cleusa Souza" -> {"full_name":"Cleusa Souza"}
+"pode me chamar de Zé" -> {"full_name":null}
+"Maria" -> {"full_name":null}
 "bom dia" -> {"full_name":null}""",
     "email": """Pergunta feita: "Qual é o seu email?"
 Monte o endereço. Ditado por voz vem com "arroba" e "ponto" por extenso e com \
@@ -433,7 +435,12 @@ def _interpret_with_mock(field: SignupField, text: str) -> SignupAnswer:
 def _mock_name(text: str) -> str | None:
     stripped = _TITLES.sub("", _NAME_PREFIXES.sub("", text.strip()))
     cleaned = re.sub(r"[^\wÀ-ÿ\s'-]", " ", stripped).strip()
-    return cleaned or None
+    if not cleaned:
+        return None
+    parts = [part for part in cleaned.split() if part]
+    if len(parts) < 2:
+        return None
+    return cleaned
 
 
 def _mock_email(text: str) -> str | None:

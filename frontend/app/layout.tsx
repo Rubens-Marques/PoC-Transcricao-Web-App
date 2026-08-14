@@ -22,7 +22,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Travely",
+  title: "Brio",
   description: "Ache a sua próxima viagem conversando, sem pressa.",
   icons: {
     icon: "/brand/travely-favicon.svg",

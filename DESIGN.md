@@ -1,5 +1,5 @@
 ---
-name: Travely
+name: Brio
 description: Paleta Sol — um único matiz amarelo, do papel ao quase-preto. Interface clean para 40+.
 colors:
   papel: "#fffdf8"
@@ -22,7 +22,7 @@ colors:
   alerta-fundo: "#fdefe7"
 ---
 
-# Travely — Design System
+# Brio — Design System
 
 Produto de viagem para pessoas de 40 anos ou mais. Duas decisões governam tudo o
 que está aqui: **uma cor só** e **uma pergunta por vez**.
@@ -180,7 +180,7 @@ falsearia a comparação.
   quando a busca responde — sem isso, quem usa teclado ou leitor de tela não
   fica sabendo que a tela mudou.
 - Conversa marcada com `role="log"` e `aria-live="polite"`; cada balão diz
-  "Você:" ou "Travely:" para leitor de tela, já que lado e cor não chegam nele.
+  "Você:" ou "Brio:" para leitor de tela, já que lado e cor não chegam nele.
 - `prefers-reduced-motion` desliga as animações — inclusive a pausa de digitação
   do chat, que vai a zero.
 - Mensagens de erro em português, dizendo o que fazer em seguida (o hook de voz

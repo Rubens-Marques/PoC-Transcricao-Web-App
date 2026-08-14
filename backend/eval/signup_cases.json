@@ -23,13 +23,15 @@
       "tag": "nome",
       "field": "name",
       "text": "pode me chamar de Zé",
-      "expected": { "full_name": ["Zé", "Ze"] }
+      "expected": { "full_name": null },
+      "strict_null": ["full_name"]
     },
     {
       "tag": "nome",
       "field": "name",
       "text": "eu sou a Dona Cleusa",
-      "expected": { "full_name": ["Cleusa", "Dona Cleusa"] }
+      "expected": { "full_name": null },
+      "strict_null": ["full_name"]
     },
 
     {

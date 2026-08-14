@@ -141,6 +141,12 @@ async def test_text_that_says_nothing_yields_an_empty_answer() -> None:
     assert answer.full_name is None
 
 
+@pytest.mark.anyio
+async def test_single_given_name_is_not_a_full_name() -> None:
+    answer = await interpret_signup_answer("name", "Maria")
+    assert answer.full_name is None
+
+
 def test_every_field_has_a_schema() -> None:
     from typing import get_args
 
