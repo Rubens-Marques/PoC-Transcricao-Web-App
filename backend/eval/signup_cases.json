@@ -1,0 +1,235 @@
+{
+  "_readme": [
+    "Conjunto de avaliação da interpretação das respostas de cadastro.",
+    "Cada caso lista só os campos que a resposta realmente expressa.",
+    "'strict_null' lista campos que DEVEM sair nulos.",
+    "Um valor em lista significa 'qualquer um destes serve'.",
+    "'tag' agrupa por classe de dificuldade para o relatório."
+  ],
+  "cases": [
+    {
+      "tag": "nome",
+      "field": "name",
+      "text": "Maria Aparecida Silva",
+      "expected": { "full_name": "Maria Aparecida Silva" }
+    },
+    {
+      "tag": "nome",
+      "field": "name",
+      "text": "olha, meu nome é Maria Silva",
+      "expected": { "full_name": "Maria Silva" }
+    },
+    {
+      "tag": "nome",
+      "field": "name",
+      "text": "pode me chamar de Zé",
+      "expected": { "full_name": ["Zé", "Ze"] }
+    },
+    {
+      "tag": "nome",
+      "field": "name",
+      "text": "eu sou a Dona Cleusa",
+      "expected": { "full_name": ["Cleusa", "Dona Cleusa"] }
+    },
+
+    {
+      "tag": "email",
+      "field": "email",
+      "text": "maria.silva@uol.com.br",
+      "expected": { "email": "maria.silva@uol.com.br" }
+    },
+    {
+      "tag": "email-voz",
+      "field": "email",
+      "text": "maria arroba gmail ponto com",
+      "expected": { "email": "maria@gmail.com" }
+    },
+    {
+      "tag": "email-voz",
+      "field": "email",
+      "text": "é joão silva arroba hotmail ponto com",
+      "expected": {
+        "email": [
+          "joaosilva@hotmail.com",
+          "joao.silva@hotmail.com",
+          "joãosilva@hotmail.com"
+        ]
+      }
+    },
+
+    {
+      "tag": "data",
+      "field": "birthDate",
+      "text": "15/03/1952",
+      "expected": { "birth_date": "1952-03-15" }
+    },
+    {
+      "tag": "data",
+      "field": "birthDate",
+      "text": "nasci em 15 de março de 1952",
+      "expected": { "birth_date": "1952-03-15" }
+    },
+    {
+      "tag": "data",
+      "field": "birthDate",
+      "text": "primeiro de janeiro de 1948",
+      "expected": { "birth_date": "1948-01-01" }
+    },
+    {
+      "tag": "idade",
+      "field": "birthDate",
+      "text": "tenho 71 anos",
+      "expected": { "age": 71 },
+      "strict_null": ["birth_date"]
+    },
+    {
+      "tag": "idade",
+      "field": "birthDate",
+      "text": "já fiz 68 aninhos",
+      "expected": { "age": 68 },
+      "strict_null": ["birth_date"]
+    },
+
+    {
+      "tag": "civil-direto",
+      "field": "maritalStatus",
+      "text": "solteiro",
+      "expected": { "marital_status": "solteiro" }
+    },
+    {
+      "tag": "civil-giria",
+      "field": "maritalStatus",
+      "text": "sou solteirão mesmo",
+      "expected": { "marital_status": "solteiro" }
+    },
+    {
+      "tag": "civil-giria",
+      "field": "maritalStatus",
+      "text": "tô solteira",
+      "expected": { "marital_status": "solteiro" }
+    },
+    {
+      "tag": "civil-giria",
+      "field": "maritalStatus",
+      "text": "nunca casei não",
+      "expected": { "marital_status": "solteiro" }
+    },
+    {
+      "tag": "civil-contexto",
+      "field": "maritalStatus",
+      "text": "casado há 20 anos",
+      "expected": { "marital_status": "casado" }
+    },
+    {
+      "tag": "civil-contexto",
+      "field": "maritalStatus",
+      "text": "sou casada com o Joaquim desde 1978",
+      "expected": { "marital_status": "casado" }
+    },
+    {
+      "tag": "civil-contexto",
+      "field": "maritalStatus",
+      "text": "sou viúva desde 2010",
+      "expected": { "marital_status": "viuvo" }
+    },
+    {
+      "tag": "civil-contexto",
+      "field": "maritalStatus",
+      "text": "perdi meu marido faz três anos",
+      "expected": { "marital_status": "viuvo" }
+    },
+    {
+      "tag": "civil-giria",
+      "field": "maritalStatus",
+      "text": "moro junto com meu companheiro",
+      "expected": { "marital_status": "uniao" }
+    },
+    {
+      "tag": "civil-giria",
+      "field": "maritalStatus",
+      "text": "me separei faz tempo",
+      "expected": { "marital_status": "divorciado" }
+    },
+    {
+      "tag": "civil-giria",
+      "field": "maritalStatus",
+      "text": "sou desquitada",
+      "expected": { "marital_status": "divorciado" }
+    },
+    {
+      "tag": "civil-vazio",
+      "field": "maritalStatus",
+      "text": "prefiro não dizer",
+      "strict_null": ["marital_status"]
+    },
+
+    {
+      "tag": "filhos",
+      "field": "children",
+      "text": "não tenho",
+      "expected": { "has_minor_children": false, "minor_children_count": 0 }
+    },
+    {
+      "tag": "filhos",
+      "field": "children",
+      "text": "tenho dois pequenos",
+      "expected": { "has_minor_children": true, "minor_children_count": 2 }
+    },
+    {
+      "tag": "filhos",
+      "field": "children",
+      "text": "sim, 3",
+      "expected": { "has_minor_children": true, "minor_children_count": 3 }
+    },
+    {
+      "tag": "filhos-armadilha",
+      "field": "children",
+      "text": "tenho dois filhos mas já são adultos",
+      "expected": { "has_minor_children": false, "minor_children_count": 0 }
+    },
+    {
+      "tag": "filhos-armadilha",
+      "field": "children",
+      "text": "meus filhos já casaram tudo",
+      "expected": { "has_minor_children": false, "minor_children_count": 0 }
+    },
+
+    {
+      "tag": "local",
+      "field": "place",
+      "text": "moro em Campinas, São Paulo",
+      "expected": { "city": "Campinas", "state": "São Paulo" }
+    },
+    {
+      "tag": "local",
+      "field": "place",
+      "text": "sou de Belo Horizonte, Minas Gerais",
+      "expected": { "city": "Belo Horizonte", "state": "Minas Gerais" }
+    },
+    {
+      "tag": "local",
+      "field": "place",
+      "text": "aqui em Recife mesmo",
+      "expected": { "city": "Recife" }
+    },
+
+    {
+      "tag": "hobbies",
+      "field": "hobbies",
+      "text": "gosto de caminhar, de fotografia e de cozinhar",
+      "expected": { "hobbies_min": 3 }
+    },
+    {
+      "tag": "hobbies",
+      "field": "hobbies",
+      "text": "adoro cuidar do meu jardim",
+      "expected": { "hobbies_min": 1 }
+    },
+    {
+      "tag": "hobbies",
+      "field": "hobbies",
+      "text": "eu danço forró e jogo baralho com as amigas",
+      "expected": { "hobbies_min": 2 }
+    }
+  ]
+}
