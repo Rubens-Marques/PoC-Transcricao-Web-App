@@ -33,16 +33,21 @@ function rows(profile: TravelyProfile): Array<[string, string]> {
 
 export function SignupReview({ profile }: { profile: TravelyProfile }) {
   return (
-    <div className="flex w-full flex-col text-left">
+    <div id="resumo-cadastro" className="flex w-full flex-col text-left">
       <h1 className="font-display text-titulo">Confira os seus dados</h1>
       <p className="mt-3 text-corpo text-suave">
         Se algo estiver errado, é só refazer. Se estiver certo, confirme.
       </p>
-      <dl className="tv-placa mt-8 divide-y divide-linha">
+      <dl className="tv-placa mt-6">
         {rows(profile).map(([label, value]) => (
-          <div key={label} className="flex flex-col gap-1 px-5 py-4">
-            <dt className="text-apoio text-suave">{label}</dt>
-            <dd className="text-corpo font-semibold">{value}</dd>
+          <div
+            key={label}
+            className="flex items-baseline justify-between gap-4 border-b border-linha px-5 py-3 last:border-b-0"
+          >
+            <dt className="shrink-0 text-apoio text-suave">{label}</dt>
+            <dd className="text-right text-corpo font-semibold">
+              {value.trim() ? value : "—"}
+            </dd>
           </div>
         ))}
       </dl>

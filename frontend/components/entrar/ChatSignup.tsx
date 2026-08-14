@@ -105,6 +105,8 @@ export function ChatSignup({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
 
   const field = CHAT_ORDER[fieldIndex];
   const locked = busy || typing;
@@ -116,11 +118,12 @@ export function ChatSignup({
       top: node.scrollHeight,
       behavior: reduce ? "auto" : "smooth",
     });
-  }, [log, typing, reduce]);
+  }, [log, typing, review, reduce]);
 
   useEffect(() => {
-    if (!locked) inputRef.current?.focus();
-  }, [fieldIndex, locked]);
+    if (review || locked) return;
+    inputRef.current?.focus();
+  }, [fieldIndex, locked, review]);
 
   useEffect(() => {
     return () => abortRef.current?.abort();
@@ -138,7 +141,9 @@ export function ChatSignup({
     onProfile(nextProfile);
 
     if (fieldIndex === CHAT_ORDER.length - 1) {
+      profileRef.current = nextProfile;
       setReview(nextProfile);
+      push("bot", "Confira se os seus dados estão certos.");
       return;
     }
 
@@ -179,7 +184,7 @@ export function ChatSignup({
         text,
         controller.signal,
       );
-      applied = applyInterpretedAnswer(field, answer, profile);
+      applied = applyInterpretedAnswer(field, answer, profileRef.current);
     } catch (caught) {
       if (caught instanceof DOMException && caught.name === "AbortError") {
         // Sair sem baixar o `typing` deixaria o indicador aceso e o campo
@@ -189,7 +194,7 @@ export function ChatSignup({
       }
       // O modelo caiu. O cadastro não pode cair junto: o parser local resolve
       // as respostas diretas e a pessoa termina o que começou.
-      applied = applyChatAnswer(field, text, profile);
+      applied = applyChatAnswer(field, text, profileRef.current);
     }
 
     const elapsed = Date.now() - startedAt;
@@ -206,16 +211,20 @@ export function ChatSignup({
   function answerDirectly(answer: SignupAnswer, label: string) {
     if (!field || locked) return;
     push("you", label);
-    settle(applyInterpretedAnswer(field, answer, profile));
+    settle(applyInterpretedAnswer(field, answer, profileRef.current));
   }
 
-  if (review) {
-    return (
-      <EntrarShell
-        modo="Conversando"
-        progresso={{ atual: CHAT_ORDER.length, total: CHAT_ORDER.length }}
-        onBack={onBack}
-        rodape={
+  return (
+    <EntrarShell
+      modo="Conversando"
+      alturaFixa
+      progresso={{
+        atual: review ? CHAT_ORDER.length : fieldIndex + 1,
+        total: CHAT_ORDER.length,
+      }}
+      onBack={onBack}
+      rodape={
+        review ? (
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button tom="claro" largo onClick={onBack}>
               Refazer o cadastro
@@ -224,60 +233,48 @@ export function ChatSignup({
               Confirmar
             </Button>
           </div>
-        }
-      >
-        <SignupReview profile={review} />
-      </EntrarShell>
-    );
-  }
-
-  return (
-    <EntrarShell
-      modo="Conversando"
-      alturaFixa
-      progresso={{ atual: fieldIndex + 1, total: CHAT_ORDER.length }}
-      onBack={onBack}
-      rodape={
-        <div className="flex flex-col gap-4">
-          {field && (
-            <QuickAnswer
-              field={field}
-              disabled={locked}
-              onAnswer={answerDirectly}
-            />
-          )}
-          <form
-            className="flex min-w-0 items-center gap-3"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void send();
-            }}
-          >
-            <label className="sr-only" htmlFor="chat-draft">
-              Escreva a sua resposta
-            </label>
-            <input
-              ref={inputRef}
-              id="chat-draft"
-              className="tv-campo min-w-0 flex-1"
-              value={draft}
-              maxLength={LIMITS.chat}
-              disabled={locked}
-              placeholder="Escreva aqui…"
-              onChange={(event) => setDraft(event.target.value)}
-              autoComplete="off"
-            />
-            <Button
-              tom="sol"
-              type="submit"
-              className="shrink-0 px-5"
-              disabled={locked || draft.trim().length === 0}
+        ) : (
+          <div className="flex flex-col gap-4">
+            {field && (
+              <QuickAnswer
+                field={field}
+                disabled={locked}
+                onAnswer={answerDirectly}
+              />
+            )}
+            <form
+              className="flex min-w-0 items-center gap-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void send();
+              }}
             >
-              <IconSend />
-              <span className="sr-only sm:not-sr-only">Enviar</span>
-            </Button>
-          </form>
-        </div>
+              <label className="sr-only" htmlFor="chat-draft">
+                Escreva a sua resposta
+              </label>
+              <input
+                ref={inputRef}
+                id="chat-draft"
+                className="tv-campo min-w-0 flex-1"
+                value={draft}
+                maxLength={LIMITS.chat}
+                disabled={locked}
+                placeholder="Escreva aqui…"
+                onChange={(event) => setDraft(event.target.value)}
+                autoComplete="off"
+              />
+              <Button
+                tom="sol"
+                type="submit"
+                className="shrink-0 px-5"
+                disabled={locked || draft.trim().length === 0}
+              >
+                <IconSend />
+                <span className="sr-only sm:not-sr-only">Enviar</span>
+              </Button>
+            </form>
+          </div>
+        )
       }
     >
       <div
@@ -292,6 +289,11 @@ export function ChatSignup({
           {log.map((turn) => (
             <MessageRow key={turn.id} turn={turn} name={profile.name} />
           ))}
+          {review && (
+            <li className="min-w-0">
+              <SignupReview profile={review} />
+            </li>
+          )}
           {/* Sem AnimatePresence de propósito: a animação de saída deixava o
               nó no DOM em opacity 0, e um "está escrevendo" invisível dentro
               de um aria-live é anunciado para sempre por leitor de tela. */}

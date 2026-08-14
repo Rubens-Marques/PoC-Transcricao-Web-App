@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
 import { EntrarShell } from "@/components/entrar/EntrarShell";
+import { SignupReview } from "@/components/entrar/SignupReview";
 import { IconPin } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
 import { Callout } from "@/components/ui/Callout";
@@ -43,6 +44,7 @@ export function WizardSignup({
   const [locating, setLocating] = useState(false);
   const [hobbyExtra, setHobbyExtra] = useState("");
   const [busy, setBusy] = useState(false);
+  const [review, setReview] = useState<TravelyProfile | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const passoRef = useRef<HTMLDivElement>(null);
 
@@ -82,8 +84,7 @@ export function WizardSignup({
 
     setError(null);
     if (step === TOTAL) {
-      setBusy(true);
-      onFinish(withExtra);
+      setReview(withExtra);
       return;
     }
     setStep((current) => current + 1);
@@ -133,6 +134,28 @@ export function WizardSignup({
     );
   }
 
+  if (review) {
+    return (
+      <EntrarShell
+        modo="Passo a passo"
+        progresso={{ atual: TOTAL, total: TOTAL }}
+        onBack={() => setReview(null)}
+        rodape={
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button tom="claro" largo onClick={onBack}>
+              Refazer o cadastro
+            </Button>
+            <Button tom="sol" largo onClick={() => onFinish(review)}>
+              Confirmar
+            </Button>
+          </div>
+        }
+      >
+        <SignupReview profile={review} />
+      </EntrarShell>
+    );
+  }
+
   return (
     <EntrarShell
       modo="Passo a passo"
@@ -153,7 +176,7 @@ export function WizardSignup({
           form="wizard"
           disabled={busy || locating}
         >
-          {step === TOTAL ? "Criar minha conta" : "Continuar"}
+          {step === TOTAL ? "Conferir dados" : "Continuar"}
         </Button>
       }
     >
