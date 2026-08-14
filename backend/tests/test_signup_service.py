@@ -17,6 +17,7 @@ from services.signup_service import (
     FIELD_SCHEMAS,
     MARITAL_STATUSES,
     interpret_signup_answer,
+    try_fast_parse,
 )
 
 
@@ -147,6 +148,45 @@ async def test_single_given_name_is_not_a_full_name() -> None:
     assert answer.full_name is None
 
 
+def test_fast_parse_accepts_a_plain_full_name() -> None:
+    answer = try_fast_parse("name", "Maria Silva")
+    assert answer is not None
+    assert answer.full_name == "Maria Silva"
+
+
+def test_fast_parse_rejects_a_single_given_name_without_the_model() -> None:
+    answer = try_fast_parse("name", "Maria")
+    assert answer is not None
+    assert answer.full_name is None
+
+
+def test_fast_parse_accepts_a_typed_email() -> None:
+    answer = try_fast_parse("email", "maria.silva@uol.com.br")
+    assert answer is not None
+    assert answer.email == "maria.silva@uol.com.br"
+
+
+def test_fast_parse_defers_unparsed_marital_status_to_the_model() -> None:
+    assert try_fast_parse("maritalStatus", "sei lá") is None
+
+
+@pytest.mark.anyio
+async def test_plain_answers_do_not_call_ollama(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+
+    async def boom(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("resposta direta não deveria ir ao Ollama")
+
+    monkeypatch.setattr(
+        "services.signup_service._interpret_with_ollama",
+        boom,
+    )
+    answer = await interpret_signup_answer("name", "Maria Silva")
+    assert answer.full_name == "Maria Silva"
+
+
 def test_every_field_has_a_schema() -> None:
     from typing import get_args
 
@@ -187,7 +227,7 @@ async def test_unreachable_ollama_is_a_configuration_error(
 
     # Act / Assert: daemon fora do ar é 503 (problema de operação), não 502.
     with pytest.raises(LLMConfigurationError, match="Cannot reach Ollama"):
-        await interpret_signup_answer("maritalStatus", "casado")
+        await interpret_signup_answer("maritalStatus", "sei lá")
     _ollama_client.cache_clear()
 
 
@@ -196,7 +236,7 @@ async def test_unknown_provider_is_rejected(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setenv("LLM_PROVIDER", "gemini")
 
     with pytest.raises(LLMConfigurationError, match="Unsupported LLM_PROVIDER"):
-        await interpret_signup_answer("name", "Maria")
+        await interpret_signup_answer("maritalStatus", "sei lá")
 
 
 def test_local_prompt_names_every_marital_value() -> None:

@@ -185,6 +185,12 @@ async def interpret_signup_answer(field: SignupField, text: str) -> SignupAnswer
     if field not in FIELD_SCHEMAS:
         raise LLMConfigurationError(f"Campo de cadastro desconhecido: {field!r}.")
 
+    # Resposta já estruturada (nome e sobrenome, email com @, "casado"): não
+    # espera o modelo. No CPU da VPS isso é a diferença entre 50 ms e 7 s.
+    fast = try_fast_parse(field, text)
+    if fast is not None:
+        return fast
+
     provider = os.environ.get("LLM_PROVIDER", DEFAULT_PROVIDER).strip().lower()
 
     if provider == "ollama":
@@ -219,9 +225,10 @@ async def _interpret_with_ollama(field: SignupField, text: str) -> SignupAnswer:
                 {"role": "user", "content": text},
             ],
             format=FIELD_SCHEMAS[field],
-            # Determinístico: a mesma resposta tem de virar o mesmo campo
-            # sempre, ou o cadastro parece instável para quem está usando.
-            options={"temperature": 0.0, "num_predict": 128},
+            keep_alive=-1,
+            # num_ctx baixo: o prompt do cadastro cabe em ~800 tokens. O default
+            # do Qwen (32k) gasta CPU só para alocar a janela.
+            options={"temperature": 0.0, "num_predict": 128, "num_ctx": 2048},
         )
     except ollama.ResponseError as exc:
         if exc.status_code == 404:
@@ -401,6 +408,33 @@ _TITLES = re.compile(
 def _fold(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value.lower())
     return "".join(ch for ch in normalized if not unicodedata.combining(ch))
+
+
+def try_fast_parse(field: SignupField, text: str) -> SignupAnswer | None:
+    """Parser determinístico. Só devolve resposta quando está seguro.
+
+    `None` significa "precisa do modelo": gíria que o regex não cobre, email
+    ditado de um jeito novo, frase sem cidade explícita.
+    """
+    parsed = _interpret_with_mock(field, text)
+    if field == "name":
+        # Completo ou incompleto: o modelo não inventa sobrenome.
+        return parsed
+    if field == "email":
+        return parsed if parsed.email else None
+    if field == "birthDate":
+        if parsed.birth_date or parsed.age is not None:
+            return parsed
+        return None
+    if field == "place":
+        return parsed if parsed.city else None
+    if field == "maritalStatus":
+        return parsed if parsed.marital_status else None
+    if field == "children":
+        return parsed if parsed.has_minor_children is not None else None
+    if parsed.hobbies:
+        return parsed
+    return None
 
 
 def _interpret_with_mock(field: SignupField, text: str) -> SignupAnswer:

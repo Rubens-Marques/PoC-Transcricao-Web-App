@@ -11,7 +11,16 @@ import type { SignupAnswer } from "@/services/api";
 
 export function parseEmail(text: string): string | null {
   const match = text.match(/[^\s@]+@[^\s@]+\.[^\s@]+/);
-  return match ? match[0].toLowerCase() : null;
+  if (match) return match[0].toLowerCase();
+
+  const spoken = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+arroba\s+/g, "@")
+    .replace(/\s+ponto\s+/g, ".")
+    .replace(/\s+/g, "");
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(spoken) ? spoken : null;
 }
 
 export function parseBirthDate(text: string): string | null {
@@ -146,6 +155,15 @@ export const CHAT_ORDER: ChatField[] = [
   "children",
   "hobbies",
 ];
+
+export function shouldCallSignupModel(
+  field: ChatField,
+  applied: { ok: boolean },
+): boolean {
+  if (applied.ok) return false;
+  // O modelo não inventa sobrenome. Repergunta na hora.
+  return field !== "name";
+}
 
 export function applyChatAnswer(
   field: ChatField,

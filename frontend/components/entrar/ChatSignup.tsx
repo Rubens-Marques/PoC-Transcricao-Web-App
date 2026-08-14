@@ -16,6 +16,7 @@ import {
   applyInterpretedAnswer,
   CHAT_ORDER,
   CHAT_PROMPTS,
+  shouldCallSignupModel,
 } from "@/lib/signup-chat";
 import { interpretSignupAnswer, type SignupAnswer } from "@/services/api";
 
@@ -162,13 +163,21 @@ export function ChatSignup({
     push("bot", applied.message);
   }
 
-  /** Resposta escrita: passa pelo modelo. */
+  /** Resposta escrita: tenta o parser local primeiro. Só chama o modelo
+   *  quando a frase é ambígua (gíria, email ditado de um jeito novo). */
   async function send() {
     const text = draft.trim();
     if (!text || !field || locked) return;
 
     push("you", text);
     setDraft("");
+
+    const local = applyChatAnswer(field, text, profileRef.current);
+    if (!shouldCallSignupModel(field, local)) {
+      settle(local);
+      return;
+    }
+
     setTyping(true);
 
     abortRef.current?.abort();
