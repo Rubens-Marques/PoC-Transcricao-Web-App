@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
 import { BotAvatar } from "@/components/entrar/BotAvatar";
@@ -32,7 +32,6 @@ function TypingIndicator() {
     <motion.li
       initial={reduce ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={reduce ? undefined : { opacity: 0 }}
       className="flex min-w-0 items-end gap-3"
     >
       <BotAvatar />
@@ -271,9 +270,10 @@ export function ChatSignup({
           {log.map((turn) => (
             <MessageRow key={turn.id} turn={turn} name={profile.name} />
           ))}
-          <AnimatePresence>
-            {typing ? <TypingIndicator key="typing" /> : null}
-          </AnimatePresence>
+          {/* Sem AnimatePresence de propósito: a animação de saída deixava o
+              nó no DOM em opacity 0, e um "está escrevendo" invisível dentro
+              de um aria-live é anunciado para sempre por leitor de tela. */}
+          {typing && <TypingIndicator />}
         </ol>
       </div>
     </EntrarShell>
