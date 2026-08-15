@@ -23,17 +23,13 @@ from services.signup_service import (
 
 @pytest.mark.anyio
 async def test_name_drops_the_sentence_around_it() -> None:
-    answer = await interpret_signup_answer("name", "olha, meu nome é Maria Silva")
+    answer = await interpret_signup_answer("name", "hi, my name is Maria Silva")
     assert answer.full_name == "Maria Silva"
 
 
 @pytest.mark.anyio
 async def test_email_survives_being_dictated_by_voice() -> None:
-    # O reconhecimento de fala entrega "arroba" e "ponto" por extenso; um
-    # regex de email não casa com isso e o cadastro travava aqui.
-    answer = await interpret_signup_answer(
-        "email", "maria silva arroba gmail ponto com"
-    )
+    answer = await interpret_signup_answer("email", "maria silva at gmail dot com")
     assert answer.email == "mariasilva@gmail.com"
 
 
@@ -41,20 +37,19 @@ async def test_email_survives_being_dictated_by_voice() -> None:
 @pytest.mark.parametrize(
     ("text", "expected"),
     [
-        ("solteiro", "solteiro"),
-        ("sou solteirão mesmo", "solteiro"),
-        ("tô solteira", "solteiro"),
-        ("casado há 20 anos", "casado"),
-        ("sou casada", "casado"),
-        ("moro junto com meu companheiro", "uniao"),
-        ("vivo em união estável", "uniao"),
-        ("me separei faz tempo", "divorciado"),
-        ("divorciada", "divorciado"),
-        # "desquitado" é o termo pré-1977 e aparece muito neste público.
-        # O qwen2.5:3b lia como viuvez até o prompt nomear a palavra.
-        ("sou desquitada", "divorciado"),
-        ("sou viúva desde 2010", "viuvo"),
-        ("perdi meu marido", "viuvo"),
+        ("single", "single"),
+        ("I am single", "single"),
+        ("never married", "single"),
+        ("married for 20 years", "married"),
+        ("I am married", "married"),
+        ("we live together", "partnership"),
+        ("domestic partnership", "partnership"),
+        ("I separated a while ago", "divorced"),
+        ("divorced", "divorced"),
+        ("I have been a widow since 2010", "widowed"),
+        ("I lost my husband", "widowed"),
+        ("solteiro", "single"),
+        ("casado há 20 anos", "married"),
     ],
 )
 async def test_marital_status_reads_slang_and_context(text: str, expected: str) -> None:
@@ -64,7 +59,7 @@ async def test_marital_status_reads_slang_and_context(text: str, expected: str) 
 
 @pytest.mark.anyio
 async def test_marital_status_is_none_when_nothing_was_said() -> None:
-    answer = await interpret_signup_answer("maritalStatus", "sei lá, tanto faz")
+    answer = await interpret_signup_answer("maritalStatus", "I don't know")
     assert answer.marital_status is None
 
 
@@ -72,8 +67,9 @@ async def test_marital_status_is_none_when_nothing_was_said() -> None:
 @pytest.mark.parametrize(
     ("text", "expected"),
     [
+        ("03/15/1952", "1952-03-15"),
         ("15/03/1952", "1952-03-15"),
-        ("nasci em 15 de março de 1952", "1952-03-15"),
+        ("I was born on March 15, 1952", "1952-03-15"),
         ("1952-03-15", "1952-03-15"),
     ],
 )
@@ -84,9 +80,7 @@ async def test_birth_date_is_normalised_to_iso(text: str, expected: str) -> None
 
 @pytest.mark.anyio
 async def test_age_alone_is_reported_without_inventing_a_date() -> None:
-    # "tenho 71 anos" não determina dia e mês. O serviço devolve a idade e
-    # deixa a data nula para o cliente perguntar o resto.
-    answer = await interpret_signup_answer("birthDate", "tenho 71 anos")
+    answer = await interpret_signup_answer("birthDate", "I am 71 years old")
     assert answer.age == 71
     assert answer.birth_date is None
 
@@ -95,10 +89,10 @@ async def test_age_alone_is_reported_without_inventing_a_date() -> None:
 @pytest.mark.parametrize(
     ("text", "has_children", "count"),
     [
-        ("não tenho", False, 0),
-        ("nenhum", False, 0),
-        ("tenho dois", True, 2),
-        ("sim, 3 filhos pequenos", True, 3),
+        ("I do not", False, 0),
+        ("none", False, 0),
+        ("I have two", True, 2),
+        ("yes, 3 little ones", True, 3),
     ],
 )
 async def test_children_reads_count_and_absence(
@@ -112,7 +106,7 @@ async def test_children_reads_count_and_absence(
 @pytest.mark.anyio
 async def test_grown_children_do_not_count_as_minors() -> None:
     answer = await interpret_signup_answer(
-        "children", "tenho dois filhos, mas já são adultos"
+        "children", "I have two children, but they are grown"
     )
     assert answer.has_minor_children is False
     assert answer.minor_children_count == 0
@@ -121,17 +115,17 @@ async def test_grown_children_do_not_count_as_minors() -> None:
 @pytest.mark.anyio
 async def test_place_splits_city_state_and_country() -> None:
     answer = await interpret_signup_answer(
-        "place", "moro em Campinas, São Paulo, Brasil"
+        "place", "I live in Campinas, São Paulo, Brazil"
     )
     assert answer.city == "Campinas"
     assert answer.state == "São Paulo"
-    assert answer.country == "Brasil"
+    assert answer.country == "Brazil"
 
 
 @pytest.mark.anyio
 async def test_hobbies_are_split_into_a_list() -> None:
     answer = await interpret_signup_answer(
-        "hobbies", "gosto de caminhar, de fotografia e de cozinhar"
+        "hobbies", "I like walking, photography, and cooking"
     )
     assert len(answer.hobbies) >= 2
 
@@ -167,7 +161,7 @@ def test_fast_parse_accepts_a_typed_email() -> None:
 
 
 def test_fast_parse_defers_unparsed_marital_status_to_the_model() -> None:
-    assert try_fast_parse("maritalStatus", "sei lá") is None
+    assert try_fast_parse("maritalStatus", "I don't know") is None
 
 
 @pytest.mark.anyio
@@ -177,7 +171,7 @@ async def test_plain_answers_do_not_call_ollama(
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
 
     async def boom(*_args: object, **_kwargs: object) -> None:
-        raise AssertionError("resposta direta não deveria ir ao Ollama")
+        raise AssertionError("a plain answer should not call Ollama")
 
     monkeypatch.setattr(
         "services.signup_service._interpret_with_ollama",
@@ -227,7 +221,7 @@ async def test_unreachable_ollama_is_a_configuration_error(
 
     # Act / Assert: daemon fora do ar é 503 (problema de operação), não 502.
     with pytest.raises(LLMConfigurationError, match="Cannot reach Ollama"):
-        await interpret_signup_answer("maritalStatus", "sei lá")
+        await interpret_signup_answer("maritalStatus", "I don't know")
     _ollama_client.cache_clear()
 
 
@@ -236,14 +230,18 @@ async def test_unknown_provider_is_rejected(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setenv("LLM_PROVIDER", "gemini")
 
     with pytest.raises(LLMConfigurationError, match="Unsupported LLM_PROVIDER"):
-        await interpret_signup_answer("maritalStatus", "sei lá")
+        await interpret_signup_answer("maritalStatus", "I don't know")
 
 
 def test_local_prompt_names_every_marital_value() -> None:
-    # O modelo de 3B só acerta o enum se cada valor aparecer com exemplos de
-    # como as pessoas realmente falam. Sem isso, "solteirão" virava null.
     prompt = FIELD_PROMPTS["maritalStatus"]
     for value in MARITAL_STATUSES:
         assert value in prompt
-    for slang in ("solteirão", "moro junto", "me separei", "viúva", "há 20 anos"):
+    for slang in (
+        "never married",
+        "live together",
+        "separated",
+        "widow",
+        "20 years",
+    ):
         assert slang in prompt

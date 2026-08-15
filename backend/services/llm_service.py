@@ -103,8 +103,9 @@ PREFERENCES_SCHEMA: dict[str, object] = {
 
 SYSTEM_PROMPT = """You extract travel preferences from a single spoken sentence.
 
-The speaker may use Portuguese or English. Your output values are always the \
-canonical English tokens defined by the schema, regardless of input language.
+The speaker uses English. You may still understand Portuguese if it appears. \
+Your output values are always the canonical English tokens defined by the \
+schema. Never reply in Portuguese.
 
 Rules:
 - Only fill a field the speaker actually expressed. Never guess. Use null otherwise.
@@ -158,6 +159,10 @@ depends on the hemisphere.
 but the beach"), leave that field null. Never fill it with the rejected value.
 
 Worked examples:
+
+"A beach trip in December with my wife, up to five thousand reais"
+{"destination":null,"country":null,"category":"beach","month":"December",\
+"season":null,"travelers":2,"budget_level":null,"max_budget":5000}
 
 "Quero uma praia em dezembro com minha esposa, uns 5000 reais"
 {"destination":null,"country":null,"category":"beach","month":"December",\

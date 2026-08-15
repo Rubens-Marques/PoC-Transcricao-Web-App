@@ -3,11 +3,11 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
-import { BotAvatar } from "@/components/entrar/BotAvatar";
-import { EntrarShell } from "@/components/entrar/EntrarShell";
-import { QuickAnswer } from "@/components/entrar/QuickAnswer";
-import { SignupReview } from "@/components/entrar/SignupReview";
-import { UserAvatar } from "@/components/entrar/UserAvatar";
+import { BotAvatar } from "@/components/signup/BotAvatar";
+import { QuickAnswer } from "@/components/signup/QuickAnswer";
+import { SignupReview } from "@/components/signup/SignupReview";
+import { SignupShell } from "@/components/signup/SignupShell";
+import { UserAvatar } from "@/components/signup/UserAvatar";
 import { IconSend } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
 import { LIMITS, type TravelyProfile } from "@/lib/profile";
@@ -38,7 +38,7 @@ function TypingIndicator() {
     >
       <BotAvatar />
       <div className="tv-balao tv-balao--bot inline-flex items-center gap-1.5 py-4">
-        <span className="sr-only">Brio está escrevendo</span>
+        <span className="sr-only">Brio is typing</span>
         {[0, 1, 2].map((index) => (
           <motion.span
             key={index}
@@ -73,7 +73,7 @@ function MessageRow({ turn, name }: { turn: ChatTurn; name: string }) {
       {fromYou ? <UserAvatar name={name} /> : <BotAvatar />}
       <p className={`tv-balao ${fromYou ? "tv-balao--voce" : "tv-balao--bot"}`}>
         {/* Qual lado falou não pode depender só de alinhamento e cor. */}
-        <span className="sr-only">{fromYou ? "Você: " : "Brio: "}</span>
+        <span className="sr-only">{fromYou ? "You: " : "Brio: "}</span>
         {turn.text}
       </p>
     </motion.li>
@@ -144,7 +144,7 @@ export function ChatSignup({
     if (fieldIndex === CHAT_ORDER.length - 1) {
       profileRef.current = nextProfile;
       setReview(nextProfile);
-      push("bot", "Confira se os seus dados estão certos.");
+      push("bot", "Please check that your details are correct.");
       return;
     }
 
@@ -224,22 +224,22 @@ export function ChatSignup({
   }
 
   return (
-    <EntrarShell
-      modo="Conversando"
-      alturaFixa
-      progresso={{
-        atual: review ? CHAT_ORDER.length : fieldIndex + 1,
+    <SignupShell
+      mode="Conversation"
+      fixedHeight
+      progress={{
+        current: review ? CHAT_ORDER.length : fieldIndex + 1,
         total: CHAT_ORDER.length,
       }}
       onBack={onBack}
-      rodape={
+      footer={
         review ? (
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button tom="claro" largo onClick={onBack}>
-              Refazer o cadastro
+              Start over
             </Button>
             <Button tom="sol" largo onClick={() => onFinish(review)}>
-              Confirmar
+              Confirm
             </Button>
           </div>
         ) : (
@@ -259,7 +259,7 @@ export function ChatSignup({
               }}
             >
               <label className="sr-only" htmlFor="chat-draft">
-                Escreva a sua resposta
+                Write your answer
               </label>
               <input
                 ref={inputRef}
@@ -268,7 +268,7 @@ export function ChatSignup({
                 value={draft}
                 maxLength={LIMITS.chat}
                 disabled={locked}
-                placeholder="Escreva aqui…"
+                placeholder="Write here…"
                 onChange={(event) => setDraft(event.target.value)}
                 autoComplete="off"
               />
@@ -279,7 +279,7 @@ export function ChatSignup({
                 disabled={locked || draft.trim().length === 0}
               >
                 <IconSend />
-                <span className="sr-only sm:not-sr-only">Enviar</span>
+                <span className="sr-only sm:not-sr-only">Send</span>
               </Button>
             </form>
           </div>
@@ -289,7 +289,7 @@ export function ChatSignup({
       <div
         ref={scrollRef}
         role="log"
-        aria-label="Conversa com o Brio"
+        aria-label="Conversation with Brio"
         aria-live="polite"
         aria-relevant="additions"
         className="w-full min-h-0 flex-1 overflow-y-auto"
@@ -309,6 +309,6 @@ export function ChatSignup({
           {typing && <TypingIndicator />}
         </ol>
       </div>
-    </EntrarShell>
+    </SignupShell>
   );
 }

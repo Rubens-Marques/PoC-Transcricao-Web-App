@@ -3,7 +3,7 @@ import { MARITAL_OPTIONS, type TravelyProfile } from "@/lib/profile";
 function formatBirthDate(iso: string): string {
   const [year, month, day] = iso.split("-");
   if (!year || !month || !day) return iso;
-  return `${day}/${month}/${year}`;
+  return `${month}/${day}/${year}`;
 }
 
 function maritalLabel(id: TravelyProfile["maritalStatus"]): string {
@@ -11,9 +11,9 @@ function maritalLabel(id: TravelyProfile["maritalStatus"]): string {
 }
 
 function childrenLabel(profile: TravelyProfile): string {
-  if (!profile.hasMinorChildren) return "Não";
+  if (!profile.hasMinorChildren) return "No";
   const n = profile.minorChildrenCount;
-  return n === 1 ? "Sim, 1" : `Sim, ${n}`;
+  return n === 1 ? "Yes, 1" : `Yes, ${n}`;
 }
 
 function rows(profile: TravelyProfile): Array<[string, string]> {
@@ -21,22 +21,22 @@ function rows(profile: TravelyProfile): Array<[string, string]> {
     .filter(Boolean)
     .join(", ");
   return [
-    ["Nome", profile.name],
+    ["Name", profile.name],
     ["Email", profile.email],
-    ["Nascimento", formatBirthDate(profile.birthDate)],
-    ["Onde mora", place],
-    ["Estado civil", maritalLabel(profile.maritalStatus)],
-    ["Filhos menores", childrenLabel(profile)],
-    ["O que gosta de fazer", profile.hobbies.join(", ")],
+    ["Date of birth", formatBirthDate(profile.birthDate)],
+    ["Lives in", place],
+    ["Marital status", maritalLabel(profile.maritalStatus)],
+    ["Children under 18", childrenLabel(profile)],
+    ["Likes to do", profile.hobbies.join(", ")],
   ];
 }
 
 export function SignupReview({ profile }: { profile: TravelyProfile }) {
   return (
-    <div id="resumo-cadastro" className="flex w-full flex-col text-left">
-      <h1 className="font-display text-titulo">Confira os seus dados</h1>
+    <div id="signup-review" className="flex w-full flex-col text-left">
+      <h1 className="font-display text-titulo">Check your details</h1>
       <p className="mt-3 text-corpo text-suave">
-        Se algo estiver errado, é só refazer. Se estiver certo, confirme.
+        If something is wrong, start over. If it looks right, confirm.
       </p>
       <dl className="tv-placa mt-6">
         {rows(profile).map(([label, value]) => (

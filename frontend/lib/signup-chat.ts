@@ -17,8 +17,8 @@ export function parseEmail(text: string): string | null {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+arroba\s+/g, "@")
-    .replace(/\s+ponto\s+/g, ".")
+    .replace(/\s+(at|arroba)\s+/g, "@")
+    .replace(/\s+(dot|ponto)\s+/g, ".")
     .replace(/\s+/g, "");
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(spoken) ? spoken : null;
 }
@@ -27,19 +27,34 @@ export function parseBirthDate(text: string): string | null {
   const iso = text.match(/(\d{4})-(\d{2})-(\d{2})/);
   if (iso) return iso[0];
 
-  const br = text.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
-  const brDay = br?.[1];
-  const brMonth = br?.[2];
-  const brYear = br?.[3];
-  if (brDay && brMonth && brYear) {
-    return `${brYear}-${brMonth.padStart(2, "0")}-${brDay.padStart(2, "0")}`;
+  const numeric = text.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+  const left = numeric?.[1];
+  const right = numeric?.[2];
+  const year = numeric?.[3];
+  if (left && right && year) {
+    const a = Number(left);
+    const b = Number(right);
+    const [month, day] = a > 12 && b <= 12 ? [b, a] : [a, b];
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   }
 
   const months: Record<string, string> = {
+    january: "01",
+    february: "02",
+    march: "03",
+    april: "04",
+    may: "05",
+    june: "06",
+    july: "07",
+    august: "08",
+    september: "09",
+    october: "10",
+    november: "11",
+    december: "12",
     janeiro: "01",
     fevereiro: "02",
     marco: "03",
-    março: "03",
     abril: "04",
     maio: "05",
     junho: "06",
@@ -50,18 +65,24 @@ export function parseBirthDate(text: string): string | null {
     novembro: "11",
     dezembro: "12",
   };
-  const named = text
+  const folded = text
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .match(/(\d{1,2})\s+de\s+([a-z]+)\s+de\s+(\d{4})/);
-  const namedDay = named?.[1];
-  const namedMonthKey = named?.[2];
-  const namedYear = named?.[3];
-  if (namedDay && namedMonthKey && namedYear) {
-    const month = months[namedMonthKey];
+    .replace(/[\u0300-\u036f]/g, "");
+  const named =
+    folded.match(/([a-z]+)\s+(\d{1,2}),?\s+(\d{4})/) ??
+    folded.match(/(\d{1,2})\s+(?:of\s+)?([a-z]+)\s+(\d{4})/) ??
+    folded.match(/(\d{1,2})\s+de\s+([a-z]+)\s+de\s+(\d{4})/);
+  if (named) {
+    const first = named[1];
+    const second = named[2];
+    const namedYear = named[3];
+    if (!first || !second || !namedYear) return null;
+    const monthKey = /^\d+$/.test(first) ? second : first;
+    const dayRaw = /^\d+$/.test(first) ? first : second;
+    const month = months[monthKey];
     if (!month) return null;
-    return `${namedYear}-${month}-${namedDay.padStart(2, "0")}`;
+    return `${namedYear}-${month}-${dayRaw.padStart(2, "0")}`;
   }
   return null;
 }
@@ -79,11 +100,18 @@ export function parseMaritalStatus(text: string): MaritalStatus | null {
       return option.id;
     }
   }
-  if (n.includes("casad")) return "casado";
-  if (n.includes("solteir")) return "solteiro";
-  if (n.includes("viuv")) return "viuvo";
-  if (n.includes("divorci")) return "divorciado";
-  if (n.includes("uniao") || n.includes("junto")) return "uniao";
+  if (n.includes("married") || n.includes("casad")) return "married";
+  if (n.includes("single") || n.includes("solteir")) return "single";
+  if (n.includes("widow") || n.includes("viuv")) return "widowed";
+  if (n.includes("divorced") || n.includes("divorci")) return "divorced";
+  if (
+    n.includes("partnership") ||
+    n.includes("together") ||
+    n.includes("uniao") ||
+    n.includes("junto")
+  ) {
+    return "partnership";
+  }
   return null;
 }
 
@@ -91,7 +119,10 @@ export function parseChildren(
   text: string,
 ): { hasMinorChildren: boolean; minorChildrenCount: number } | null {
   const n = text.toLowerCase();
-  if (/\b(nao|não|nenhum|nenhuma|zero)\b/.test(n) && !/\d/.test(n)) {
+  if (
+    /\b(no|none|not|dont|zero|nao|não|nenhum|nenhuma)\b/.test(n) &&
+    !/\d/.test(n)
+  ) {
     return { hasMinorChildren: false, minorChildrenCount: 0 };
   }
   const count = n.match(/(\d+)/);
@@ -99,7 +130,7 @@ export function parseChildren(
     const nChildren = Math.min(LIMITS.children, Number(count[1]));
     return { hasMinorChildren: nChildren > 0, minorChildrenCount: nChildren };
   }
-  if (/\b(sim|tenho|filh)/.test(n)) return null;
+  if (/\b(yes|yeah|sim|tenho|filh)\b/.test(n)) return null;
   return null;
 }
 
@@ -115,7 +146,7 @@ export function parsePlace(text: string): {
   return {
     city: parts[0] ?? "",
     state: parts[1] ?? "",
-    country: parts[2] ?? "Brasil",
+    country: parts[2] ?? "Brazil",
   };
 }
 
@@ -136,14 +167,14 @@ export type ChatField =
   | "hobbies";
 
 export const CHAT_PROMPTS: Record<ChatField, string> = {
-  name: "Olá. Qual o seu nome completo?",
-  email: "Qual é o seu email?",
-  birthDate: "Em que dia você nasceu? Pode dizer 15/03/1952, por exemplo.",
+  name: "Hello. What is your full name?",
+  email: "What is your email?",
+  birthDate: "What day were you born? You can say 03/15/1952, for example.",
   place:
-    "Onde você mora? Cidade, estado e país. Se quiser, escreva tudo numa frase.",
-  maritalStatus: "Qual é o seu estado civil hoje?",
-  children: "Você tem filhos menores? Se sim, quantos?",
-  hobbies: "O que você gosta de fazer? Pode listar alguns hobbies.",
+    "Where do you live? City, state, and country. You can write it in one sentence.",
+  maritalStatus: "What is your marital status today?",
+  children: "Do you have children under 18? If yes, how many?",
+  hobbies: "What do you like to do? You can list a few hobbies.",
 };
 
 export const CHAT_ORDER: ChatField[] = [
@@ -175,7 +206,7 @@ export function applyChatAnswer(
     if (!isFullName(name)) {
       return {
         ok: false,
-        message: "Pode escrever o nome completo, por favor? Nome e sobrenome.",
+        message: "Please write your full name. First and last name.",
       };
     }
     return { ok: true, profile: { ...profile, name } };
@@ -185,7 +216,8 @@ export function applyChatAnswer(
     if (!email) {
       return {
         ok: false,
-        message: "Não achei um email nisso. Algo como nome@email.com.",
+        message:
+          "I could not find an email in that. Something like name@email.com.",
       };
     }
     return { ok: true, profile: { ...profile, email } };
@@ -195,7 +227,7 @@ export function applyChatAnswer(
     if (!birthDate || !isValidBirthDate(birthDate)) {
       return {
         ok: false,
-        message: "Não peguei a data. Pode ser 15/03/1952.",
+        message: "I did not catch the date. You can use 03/15/1952.",
       };
     }
     return { ok: true, profile: { ...profile, birthDate } };
@@ -206,7 +238,7 @@ export function applyChatAnswer(
       return {
         ok: false,
         message:
-          "Pode dizer a cidade e o estado? Exemplo: Campinas, São Paulo, Brasil.",
+          "Please say the city and the state. Example: Austin, Texas, United States.",
       };
     }
     return {
@@ -215,7 +247,7 @@ export function applyChatAnswer(
         ...profile,
         city: place.city.slice(0, LIMITS.place),
         state: place.state.slice(0, LIMITS.place),
-        country: (place.country || "Brasil").slice(0, LIMITS.place),
+        country: (place.country || "Brazil").slice(0, LIMITS.place),
       },
     };
   }
@@ -225,7 +257,7 @@ export function applyChatAnswer(
       return {
         ok: false,
         message:
-          "Pode ser solteiro, casado, união estável, divorciado ou viúvo.",
+          "It can be single, married, domestic partnership, divorced, or widowed.",
       };
     }
     return { ok: true, profile: { ...profile, maritalStatus } };
@@ -235,7 +267,7 @@ export function applyChatAnswer(
     if (!children) {
       return {
         ok: false,
-        message: "Responda não, ou sim e o número. Exemplo: tenho 2.",
+        message: "Please answer no, or yes and the number. Example: I have 2.",
       };
     }
     return { ok: true, profile: { ...profile, ...children } };
@@ -247,7 +279,7 @@ export function applyChatAnswer(
   if (hobbies.length === 0) {
     return {
       ok: false,
-      message: "Diga uma ou duas coisas que você gosta de fazer.",
+      message: "Tell me one or two things you like to do.",
     };
   }
   return { ok: true, profile: { ...profile, hobbies } };
@@ -270,7 +302,7 @@ export function applyInterpretedAnswer(
     if (!isFullName(name)) {
       return {
         ok: false,
-        message: "Pode escrever o nome completo, por favor? Nome e sobrenome.",
+        message: "Please write your full name. First and last name.",
       };
     }
     return { ok: true, profile: { ...profile, name } };
@@ -281,7 +313,8 @@ export function applyInterpretedAnswer(
     if (!isValidEmail(email)) {
       return {
         ok: false,
-        message: "Não achei um email nisso. Algo como nome@email.com.",
+        message:
+          "I could not find an email in that. Something like name@email.com.",
       };
     }
     return { ok: true, profile: { ...profile, email } };
@@ -295,12 +328,13 @@ export function applyInterpretedAnswer(
       if (answer.age != null) {
         return {
           ok: false,
-          message: `Entendi, ${answer.age} anos. E em que dia e mês você nasceu? Pode usar o calendário aqui embaixo.`,
+          message: `Got it, ${answer.age} years old. And on what day and month were you born? You can use the calendar below.`,
         };
       }
       return {
         ok: false,
-        message: "Não peguei a data. Pode ser 15/03/1952, ou use o calendário.",
+        message:
+          "I did not catch the date. You can use 03/15/1952, or the calendar.",
       };
     }
     return { ok: true, profile: { ...profile, birthDate } };
@@ -311,8 +345,7 @@ export function applyInterpretedAnswer(
     if (!city) {
       return {
         ok: false,
-        message:
-          "Pode dizer a cidade e o estado? Exemplo: Campinas, São Paulo.",
+        message: "Please say the city and the state. Example: Austin, Texas.",
       };
     }
     return {
@@ -321,7 +354,7 @@ export function applyInterpretedAnswer(
         ...profile,
         city,
         state: (answer.state ?? "").trim().slice(0, LIMITS.place),
-        country: (answer.country ?? "Brasil").trim().slice(0, LIMITS.place),
+        country: (answer.country ?? "Brazil").trim().slice(0, LIMITS.place),
       },
     };
   }
@@ -331,7 +364,7 @@ export function applyInterpretedAnswer(
       return {
         ok: false,
         message:
-          "Pode ser solteiro, casado, união estável, divorciado ou viúvo. Ou escolha aqui embaixo.",
+          "It can be single, married, domestic partnership, divorced, or widowed. Or choose below.",
       };
     }
     return {
@@ -344,7 +377,7 @@ export function applyInterpretedAnswer(
     if (answer.has_minor_children == null) {
       return {
         ok: false,
-        message: "Responda não, ou sim e quantos. Exemplo: tenho 2.",
+        message: "Please answer no, or yes and how many. Example: I have 2.",
       };
     }
     const count = answer.has_minor_children
@@ -367,7 +400,7 @@ export function applyInterpretedAnswer(
   if (hobbies.length === 0) {
     return {
       ok: false,
-      message: "Diga uma ou duas coisas que você gosta de fazer.",
+      message: "Tell me one or two things you like to do.",
     };
   }
   return { ok: true, profile: { ...profile, hobbies } };

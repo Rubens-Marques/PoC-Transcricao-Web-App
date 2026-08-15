@@ -32,7 +32,7 @@ def test_maps_town_when_city_is_missing() -> None:
             "address": {
                 "town": "Campinas",
                 "state": "São Paulo",
-                "country": "Brasil",
+                "country": "Brazil",
             }
         }
     )
@@ -40,12 +40,12 @@ def test_maps_town_when_city_is_missing() -> None:
     assert place == {
         "city": "Campinas",
         "state": "São Paulo",
-        "country": "Brasil",
+        "country": "Brazil",
     }
 
 
 def test_rejects_payload_without_a_locality() -> None:
-    assert place_from_nominatim({"address": {"country": "Brasil"}}) is None
+    assert place_from_nominatim({"address": {"country": "Brazil"}}) is None
 
 
 def test_rejects_out_of_range_latitude(client: TestClient) -> None:
@@ -60,7 +60,7 @@ def test_returns_place_from_nominatim(client: TestClient) -> None:
             "address": {
                 "city": "Campinas",
                 "state": "São Paulo",
-                "country": "Brasil",
+                "country": "Brazil",
             }
         }
     )
@@ -75,7 +75,7 @@ def test_returns_place_from_nominatim(client: TestClient) -> None:
     assert response.json() == {
         "city": "Campinas",
         "state": "São Paulo",
-        "country": "Brasil",
+        "country": "Brazil",
     }
     mocked.assert_awaited_once()
 

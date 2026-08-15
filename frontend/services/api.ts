@@ -33,9 +33,9 @@ function readErrorDetail(body: unknown, status: number): string {
     }
   }
   if (status === 502 || status === 503) {
-    return "O serviço está ocupado. Tente de novo em instantes.";
+    return "The service is busy. Please try again in a moment.";
   }
-  return "Não consegui completar agora. Tente de novo.";
+  return "I could not finish that now. Please try again.";
 }
 
 async function postJson<T>(
@@ -55,7 +55,7 @@ async function postJson<T>(
     if (caught instanceof DOMException && caught.name === "AbortError") {
       throw caught;
     }
-    throw new Error("Não consegui falar com o servidor. Tente de novo.");
+    throw new Error("I could not reach the server. Please try again.");
   }
 
   if (!response.ok) {

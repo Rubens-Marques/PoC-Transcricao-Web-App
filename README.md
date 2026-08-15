@@ -256,7 +256,7 @@ não linguagem.
 
 Os valores dentro do JSON são tokens canônicos em inglês, independentemente do
 idioma falado — é o schema que define isso. A UI apenas os enfeita com emoji
-(`beach` → `🏖️ Beach`); ela ainda não traduz os rótulos para português.
+(`beach` → `Beach`). A UI mostra esses rótulos em inglês.
 
 `score` e `match_reasons` são acréscimos ao formato mínimo do spec. Eles tornam o
 ranking auditável, que é boa parte do propósito de uma demonstração de PoC.
@@ -277,13 +277,13 @@ fez; o serviço devolve só o que aquela pergunta pede.
 **Requisição**
 
 ```json
-{ "field": "maritalStatus", "text": "casado há 20 anos" }
+{ "field": "maritalStatus", "text": "married for 20 years" }
 ```
 
-| Campo   | Tipo   | Restrições                                                                     |
-| ------- | ------ | ------------------------------------------------------------------------------ |
-| `field` | enum   | `name` `email` `birthDate` `place` `maritalStatus` `children` `hobbies`        |
-| `text`  | string | 1 a 280 caracteres (o mesmo teto do campo de conversa no cliente)              |
+| Campo   | Tipo   | Restrições                                                              |
+| ------- | ------ | ----------------------------------------------------------------------- |
+| `field` | enum   | `name` `email` `birthDate` `place` `maritalStatus` `children` `hobbies` |
+| `text`  | string | 1 a 280 caracteres (o mesmo teto do campo de conversa no cliente)       |
 
 **Resposta `200`**
 
@@ -297,7 +297,7 @@ fez; o serviço devolve só o que aquela pergunta pede.
     "city": null,
     "state": null,
     "country": null,
-    "marital_status": "casado",
+    "marital_status": "married",
     "has_minor_children": null,
     "minor_children_count": null,
     "hobbies": []
@@ -309,16 +309,16 @@ Todo campo é opcional: a resposta pode não conter o que foi perguntado, e
 inventar valor seria pior do que reperguntar. O cliente valida o que chega
 (email, data) antes de gravar no perfil.
 
-Diferente das preferências de viagem, os valores aqui saem em **português** —
-é o cadastro da própria pessoa, exibido para ela.
+Os valores do cadastro também saem em **inglês** (`single`, `married`,
+`Brazil`) — é o que a tela mostra para a pessoa.
 
 **Erros**
 
-| Status | Quando                                                     |
-| ------ | ---------------------------------------------------------- |
-| `422`  | `field` desconhecido, ou `text` vazio/acima de 280          |
-| `502`  | O modelo respondeu algo inutilizável                        |
-| `503`  | Provider mal configurado ou Ollama fora do ar               |
+| Status | Quando                                             |
+| ------ | -------------------------------------------------- |
+| `422`  | `field` desconhecido, ou `text` vazio/acima de 280 |
+| `502`  | O modelo respondeu algo inutilizável               |
+| `503`  | Provider mal configurado ou Ollama fora do ar      |
 
 Se este endpoint falhar, o cliente **não** interrompe o cadastro: cai no parser
 local e a pessoa termina o que começou.
@@ -347,7 +347,7 @@ JSON válido no formato esperado — não há prompt de reparo nem adivinhação
 consegue emitir JSON malformado nem um valor de enum inventado. Só a _semântica_
 pode sair errada.
 
-O modelo é instruído a aceitar entrada em português ou inglês e sempre emitir os
+O modelo é instruído a responder em inglês (e ainda entender português) e sempre emitir os
 tokens canônicos em inglês que o schema define.
 
 ```json

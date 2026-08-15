@@ -4,29 +4,29 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { BrandMark } from "@/components/BrandMark";
-import { ChatSignup } from "@/components/entrar/ChatSignup";
-import { WizardSignup } from "@/components/entrar/WizardSignup";
+import { ChatSignup } from "@/components/signup/ChatSignup";
+import { WizardSignup } from "@/components/signup/WizardSignup";
 import { IconChat, IconSteps } from "@/components/icons";
 import { emptyProfile, saveProfile, type TravelyProfile } from "@/lib/profile";
 
 type Mode = "choice" | "wizard" | "chat";
 
-const MODELOS = [
+const MODELS = [
   {
     id: "wizard" as const,
     Icon: IconSteps,
-    titulo: "Passo a passo",
-    resumo: "Uma pergunta por tela, com barra de progresso.",
+    title: "Step by step",
+    summary: "One question per screen, with a progress bar.",
   },
   {
     id: "chat" as const,
     Icon: IconChat,
-    titulo: "Conversando",
-    resumo: "Como uma conversa de mensagem: a gente pergunta, você responde.",
+    title: "Conversation",
+    summary: "Like a message chat: we ask, you answer.",
   },
 ];
 
-export function EntrarApp() {
+export function SignupApp() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("choice");
   const [profile, setProfile] = useState<TravelyProfile>(emptyProfile);
@@ -40,8 +40,8 @@ export function EntrarApp() {
     setProfile((current) => ({ ...current, ...partial }));
   }
 
-  /** Voltar para a escolha zera o rascunho: os dois modelos coletam os mesmos
-   *  campos, e carregar respostas de um para o outro falsearia a comparação. */
+  /** Going back to the choice clears the draft: both models collect the same
+   *  fields, and carrying answers across would spoil the comparison. */
   function backToChoice() {
     setMode("choice");
     setProfile(emptyProfile());
@@ -71,18 +71,18 @@ export function EntrarApp() {
 
   return (
     <main
-      id="conteudo"
+      id="content"
       className="mx-auto flex min-h-svh w-full max-w-xl flex-col items-center justify-center px-5 py-12 text-center"
     >
       <BrandMark className="h-10 w-auto" />
 
-      <h1 className="mt-10">Vamos criar a sua conta.</h1>
+      <h1 className="mt-10">Let’s create your account.</h1>
       <p className="mt-4 text-corpo text-suave">
-        São sete perguntas simples, do jeito que você preferir.
+        Seven simple questions, in the way you prefer.
       </p>
 
       <div className="mt-10 grid w-full gap-3">
-        {MODELOS.map(({ id, Icon, titulo, resumo }) => (
+        {MODELS.map(({ id, Icon, title, summary }) => (
           <button
             key={id}
             type="button"
@@ -90,8 +90,8 @@ export function EntrarApp() {
             onClick={() => setMode(id)}
           >
             <Icon className="h-7 w-7 text-sol-700" />
-            <span className="font-display text-titulo">{titulo}</span>
-            <span className="text-apoio text-suave">{resumo}</span>
+            <span className="font-display text-titulo">{title}</span>
+            <span className="text-apoio text-suave">{summary}</span>
           </button>
         ))}
       </div>

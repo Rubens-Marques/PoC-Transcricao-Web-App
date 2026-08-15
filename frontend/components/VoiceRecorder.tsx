@@ -9,8 +9,8 @@ import { OptionList } from "@/components/ui/OptionList";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 
 const LANGUAGES = [
-  { id: "pt-BR" as const, label: "Português" },
   { id: "en-US" as const, label: "English" },
+  { id: "pt-BR" as const, label: "Portuguese" },
 ];
 
 type LanguageCode = (typeof LANGUAGES)[number]["id"];
@@ -27,7 +27,7 @@ interface VoiceRecorderProps {
 }
 
 export function VoiceRecorder({ onSearch, isSearching }: VoiceRecorderProps) {
-  const [lang, setLang] = useState<LanguageCode>("pt-BR");
+  const [lang, setLang] = useState<LanguageCode>("en-US");
   const {
     isSupported,
     isListening,
@@ -49,12 +49,12 @@ export function VoiceRecorder({ onSearch, isSearching }: VoiceRecorderProps) {
         {isListening ? (
           <Button tom="alerta" onClick={stop}>
             <IconStop className="h-5 w-5" />
-            Parar de ouvir
+            Stop listening
           </Button>
         ) : (
           <Button tom="sol" onClick={start} disabled={isSupported === false}>
             <IconMic className="h-5 w-5" />
-            Falar
+            Speak
           </Button>
         )}
 
@@ -64,7 +64,7 @@ export function VoiceRecorder({ onSearch, isSearching }: VoiceRecorderProps) {
           disabled={trimmed.length === 0 && !isListening}
         >
           <IconClear className="h-5 w-5" />
-          Limpar
+          Clear
         </Button>
       </div>
 
@@ -77,16 +77,16 @@ export function VoiceRecorder({ onSearch, isSearching }: VoiceRecorderProps) {
             aria-hidden
             className="h-2.5 w-2.5 animate-pulse rounded-full bg-alerta"
           />
-          Estou ouvindo…
+          Listening…
         </p>
       )}
 
       <div className="mt-8 flex w-full flex-col items-center">
         <label htmlFor="transcription" className="text-corpo">
-          O que você quer
+          What you want
         </label>
         <p className="mt-2 text-apoio text-suave">
-          O que você falar aparece aqui. Dá para corrigir ou escrever direto.
+          What you say appears here. You can edit it or type it yourself.
         </p>
         <textarea
           id="transcription"
@@ -100,10 +100,10 @@ export function VoiceRecorder({ onSearch, isSearching }: VoiceRecorderProps) {
       </div>
 
       <div className="mt-8 w-full">
-        <p className="text-apoio text-suave">Idioma da fala</p>
+        <p className="text-apoio text-suave">Speech language</p>
         <div className="mt-3">
           <OptionList
-            legend="Idioma da fala"
+            legend="Speech language"
             options={LANGUAGES}
             value={lang}
             onChange={setLang}
@@ -115,8 +115,8 @@ export function VoiceRecorder({ onSearch, isSearching }: VoiceRecorderProps) {
       {isSupported === false && (
         <div className="mt-6 w-full">
           <Callout tom="aviso">
-            Este navegador não entende fala. No Chrome e no Edge funciona — ou
-            escreva o seu pedido na caixa acima.
+            This browser cannot hear speech. Chrome and Edge work — or write
+            your request in the box above.
           </Callout>
         </div>
       )}
@@ -135,7 +135,7 @@ export function VoiceRecorder({ onSearch, isSearching }: VoiceRecorderProps) {
           disabled={trimmed.length === 0 || isSearching}
         >
           <IconSearch className="h-5 w-5" />
-          {isSearching ? "Procurando viagens…" : "Ver viagens para mim"}
+          {isSearching ? "Looking for trips…" : "Show trips for me"}
         </Button>
       </div>
     </section>

@@ -40,8 +40,8 @@ type QuickAnswerProps = {
 };
 
 const SIM_NAO = [
-  { id: "nao" as const, label: "Não tenho" },
-  { id: "sim" as const, label: "Sim, tenho" },
+  { id: "no" as const, label: "I do not" },
+  { id: "yes" as const, label: "Yes, I do" },
 ];
 
 /** Atalho opcional para a pergunta da vez.
@@ -67,7 +67,7 @@ export function QuickAnswer({ field, disabled, onAnswer }: QuickAnswerProps) {
 function Frame({ children }: { children: React.ReactNode }) {
   return (
     <div className="w-full border-t border-linha pt-4">
-      <p className="text-apoio text-suave">Se preferir, escolha aqui:</p>
+      <p className="text-apoio text-suave">If you prefer, choose here:</p>
       <div className="mt-3">{children}</div>
     </div>
   );
@@ -80,7 +80,7 @@ function QuickDate({ disabled, onAnswer }: Omit<QuickAnswerProps, "field">) {
     <Frame>
       <div className="flex flex-wrap items-center justify-center gap-3">
         <label className="sr-only" htmlFor="quick-date">
-          Data de nascimento
+          Date of birth
         </label>
         <input
           id="quick-date"
@@ -103,7 +103,7 @@ function QuickDate({ disabled, onAnswer }: Omit<QuickAnswerProps, "field">) {
             setValue("");
           }}
         >
-          Usar esta data
+          Use this date
         </Button>
       </div>
     </Frame>
@@ -115,7 +115,7 @@ function QuickMarital({ disabled, onAnswer }: Omit<QuickAnswerProps, "field">) {
     <Frame>
       <fieldset disabled={disabled}>
         <OptionList
-          legend="Estado civil"
+          legend="Marital status"
           options={MARITAL_OPTIONS}
           value={null}
           onChange={(id: MaritalStatus) => {
@@ -143,25 +143,25 @@ function QuickChildren({
       >
         <div className="w-full">
           <OptionList
-            legend="Filhos menores de 18 anos"
+            legend="Children under 18"
             options={SIM_NAO}
             value={null}
             onChange={(id) => {
-              if (id === "nao") {
+              if (id === "no") {
                 onAnswer(
                   {
                     ...empty,
                     has_minor_children: false,
                     minor_children_count: 0,
                   },
-                  "Não tenho",
+                  "I do not",
                 );
               }
             }}
           />
         </div>
         <Counter
-          label="Se tem, quantos"
+          label="If yes, how many"
           value={count}
           min={1}
           max={LIMITS.children}
@@ -178,12 +178,12 @@ function QuickChildren({
                 minor_children_count: count,
               },
               count === 1
-                ? "Tenho 1 filho menor"
-                : `Tenho ${count} filhos menores`,
+                ? "I have 1 child under 18"
+                : `I have ${count} children under 18`,
             )
           }
         >
-          Confirmar {count}
+          Confirm {count}
         </Button>
       </fieldset>
     </Frame>
@@ -221,7 +221,7 @@ function QuickHobbies({ disabled, onAnswer }: Omit<QuickAnswerProps, "field">) {
             setSelected([]);
           }}
         >
-          Pronto
+          Done
         </Button>
       </fieldset>
     </Frame>
@@ -274,11 +274,11 @@ function QuickPlace({ disabled, onAnswer }: Omit<QuickAnswerProps, "field">) {
       <div className="flex flex-col items-center gap-2">
         <Button onClick={locate} disabled={disabled || locating}>
           <IconPin className="h-5 w-5" />
-          {locating ? "Procurando…" : "Usar minha localização"}
+          {locating ? "Looking…" : "Use my location"}
         </Button>
         {failed && (
           <p className="text-apoio text-suave">
-            Não consegui pegar a localização. Pode escrever a cidade.
+            I could not get your location. You can write the city.
           </p>
         )}
       </div>

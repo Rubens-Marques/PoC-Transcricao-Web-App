@@ -1,5 +1,5 @@
-import { EntrarApp } from "@/components/entrar/EntrarApp";
+import { redirect } from "next/navigation";
 
 export default function EntrarPage() {
-  return <EntrarApp />;
+  redirect("/signup");
 }

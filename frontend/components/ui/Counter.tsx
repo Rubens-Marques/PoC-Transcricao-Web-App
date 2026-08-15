@@ -23,7 +23,7 @@ export function Counter({ label, value, min, max, onChange }: CounterProps) {
           className="h-14 w-14 shrink-0 px-0 text-3xl"
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
-          aria-label={`Diminuir ${label.toLowerCase()}`}
+          aria-label={`Decrease ${label.toLowerCase()}`}
         >
           −
         </Button>
@@ -38,7 +38,7 @@ export function Counter({ label, value, min, max, onChange }: CounterProps) {
           className="h-14 w-14 shrink-0 px-0 text-3xl"
           onClick={() => onChange(Math.min(max, value + 1))}
           disabled={value >= max}
-          aria-label={`Aumentar ${label.toLowerCase()}`}
+          aria-label={`Increase ${label.toLowerCase()}`}
         >
           +
         </Button>

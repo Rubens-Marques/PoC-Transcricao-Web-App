@@ -1,15 +1,15 @@
 import type { Recommendation } from "@/types/travel";
 
 const CATEGORY_LABELS: Record<string, string> = {
-  beach: "Praia",
-  cold: "Frio",
-  city: "Cidade",
-  adventure: "Aventura",
-  culture: "Cultura",
-  nature: "Natureza",
+  beach: "Beach",
+  cold: "Cold",
+  city: "City",
+  adventure: "Adventure",
+  culture: "Culture",
+  nature: "Nature",
 };
 
-const currency = new Intl.NumberFormat("pt-BR", {
+const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "BRL",
   maximumFractionDigits: 0,
@@ -51,22 +51,22 @@ export function PackageCard({ recommendation }: PackageCardProps) {
 
       <dl className="mt-5 grid w-full grid-cols-2 gap-4 border-t border-linha pt-5 text-apoio">
         <div>
-          <dt className="text-suave">Duração</dt>
+          <dt className="text-suave">Length</dt>
           <dd className="mt-1 text-corpo">
-            {days} {days === 1 ? "dia" : "dias"}
+            {days} {days === 1 ? "day" : "days"}
           </dd>
         </div>
         <div>
-          <dt className="text-suave">Cabem até</dt>
+          <dt className="text-suave">Fits up to</dt>
           <dd className="mt-1 text-corpo">
-            {maxPeople} {maxPeople === 1 ? "pessoa" : "pessoas"}
+            {maxPeople} {maxPeople === 1 ? "person" : "people"}
           </dd>
         </div>
       </dl>
 
       {matchReasons.length > 0 && (
         <div className="mt-6 w-full">
-          <h4 className="text-apoio text-suave">Por que combina com você</h4>
+          <h4 className="text-apoio text-suave">Why this fits you</h4>
           <ul className="mt-3 flex flex-col items-center gap-2">
             {matchReasons.map((reason) => (
               <li key={reason} className="flex items-center gap-2 text-apoio">

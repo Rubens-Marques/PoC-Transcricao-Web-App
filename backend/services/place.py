@@ -30,7 +30,7 @@ def place_from_nominatim(payload: dict[str, Any]) -> dict[str, str] | None:
     if not city:
         return None
     state = _clip(address.get("state")) or _clip(address.get("region"))
-    country = _clip(address.get("country")) or "Brasil"
+    country = _clip(address.get("country")) or "Brazil"
     return {"city": city, "state": state, "country": country}
 
 
@@ -48,7 +48,7 @@ async def lookup_nominatim(lat: float, lon: float) -> dict[str, Any]:
                 "format": "jsonv2",
                 "lat": rounded_lat,
                 "lon": rounded_lon,
-                "accept-language": "pt-BR",
+                "accept-language": "en",
             },
         )
         response.raise_for_status()

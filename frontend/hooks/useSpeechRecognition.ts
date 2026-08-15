@@ -63,15 +63,15 @@ function getRecognitionConstructor(): SpeechRecognitionConstructor | null {
  *  não vai traduzir "service-not-allowed" nem deduzir o próximo passo. */
 const ERROR_MESSAGES: Record<string, string> = {
   "not-allowed":
-    "O microfone está bloqueado. Libere o microfone nas permissões do navegador e toque em Falar de novo.",
+    "The microphone is blocked. Allow the microphone in the browser settings and tap Speak again.",
   "service-not-allowed":
-    "O navegador bloqueou o reconhecimento de fala. Você pode escrever o pedido na caixa acima.",
+    "The browser blocked speech recognition. You can write your request in the box above.",
   "no-speech":
-    "Não ouvi nada. Toque em Falar e fale um pouco mais perto do microfone.",
+    "I did not hear anything. Tap Speak and talk a little closer to the microphone.",
   "audio-capture":
-    "Não encontrei um microfone neste aparelho. Pode escrever o pedido na caixa acima.",
+    "I could not find a microphone on this device. You can write your request in the box above.",
   network:
-    "Não consegui falar com o serviço de reconhecimento. Tente de novo em instantes.",
+    "I could not reach the speech service. Please try again in a moment.",
   aborted: "",
 };
 
@@ -132,7 +132,7 @@ export function useSpeechRecognition({
     if (!Recognition) {
       setIsSupported(false);
       setError(
-        "Este navegador não entende fala. Escreva o seu pedido na caixa acima.",
+        "This browser cannot hear speech. Write your request in the box above.",
       );
       return;
     }
@@ -165,7 +165,7 @@ export function useSpeechRecognition({
       const message = ERROR_MESSAGES[event.error];
       setError(
         message ??
-          "Não consegui ouvir agora. Tente de novo ou escreva o seu pedido.",
+          "I could not hear that now. Try again or write your request.",
       );
       setIsListening(false);
     };

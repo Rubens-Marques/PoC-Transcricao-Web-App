@@ -23,7 +23,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Brio",
-  description: "Ache a sua próxima viagem conversando, sem pressa.",
+  description: "Find your next trip by talking, at your own pace.",
   icons: {
     icon: "/brand/travely-favicon.svg",
     apple: "/brand/travely-icone-1024.png",
@@ -38,10 +38,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${nunito.variable} ${inter.variable}`}>
+    <html lang="en" className={`${nunito.variable} ${inter.variable}`}>
       <body className="font-sans antialiased">
-        <a href="#conteudo" className="pular">
-          Pular para o conteúdo
+        <a href="#content" className="pular">
+          Skip to content
         </a>
         {children}
       </body>

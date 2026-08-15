@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api/signup", tags=["signup"])
 @router.post(
     "/interpret",
     response_model=SignupInterpretResponse,
-    summary="Entender uma resposta em linguagem natural do cadastro",
+    summary="Understand a natural-language signup answer",
 )
 async def interpret(payload: SignupInterpretRequest) -> SignupInterpretResponse:
     try:

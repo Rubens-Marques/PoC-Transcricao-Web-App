@@ -81,7 +81,7 @@ Logo, símbolo, wordmark, ícone 1024, favicon e tokens no kit acima. Sem depoim
 ## Product Principles
 
 1. Um passo de cada vez: a pessoa nunca enfrenta um formulário de “rede social”.
-2. Acessibilidade não é extra: tipo grande, tema claro, contraste, alvos de toque generosos, copy em português simples.
+2. Acessibilidade não é extra: tipo grande, tema claro, contraste, alvos de toque generosos, copy em inglês simples.
 3. Sugerir em vez de exigir: localização e correções da IA vêm como ajuda, não como obstáculo.
 4. Voz é caminho de primeira classe, não atalho escondido.
 5. Compartilhar dica é o ato; o perfil é o mínimo para a comunidade fazer sentido.

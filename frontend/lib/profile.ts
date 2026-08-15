@@ -11,7 +11,7 @@ export const LIMITS = {
 } as const;
 
 export type MaritalStatus =
-  "solteiro" | "casado" | "uniao" | "divorciado" | "viuvo";
+  "single" | "married" | "partnership" | "divorced" | "widowed";
 
 export type TravelyProfile = {
   name: string;
@@ -27,11 +27,11 @@ export type TravelyProfile = {
 };
 
 export const MARITAL_OPTIONS: { id: MaritalStatus; label: string }[] = [
-  { id: "solteiro", label: "Solteiro(a)" },
-  { id: "casado", label: "Casado(a)" },
-  { id: "uniao", label: "União estável" },
-  { id: "divorciado", label: "Divorciado(a)" },
-  { id: "viuvo", label: "Viúvo(a)" },
+  { id: "single", label: "Single" },
+  { id: "married", label: "Married" },
+  { id: "partnership", label: "Domestic partnership" },
+  { id: "divorced", label: "Divorced" },
+  { id: "widowed", label: "Widowed" },
 ];
 
 const MARITAL_IDS = new Set<MaritalStatus>(
@@ -39,16 +39,16 @@ const MARITAL_IDS = new Set<MaritalStatus>(
 );
 
 export const HOBBY_CHIPS = [
-  "Caminhada",
-  "Fotografia",
-  "Culinária",
-  "Leitura",
-  "Jardim",
-  "Dança",
-  "Música",
-  "Praia",
-  "História",
-  "Artesanato",
+  "Walking",
+  "Photography",
+  "Cooking",
+  "Reading",
+  "Gardening",
+  "Dancing",
+  "Music",
+  "Beach",
+  "History",
+  "Crafts",
 ];
 
 export const emptyProfile = (): TravelyProfile => ({
@@ -57,8 +57,8 @@ export const emptyProfile = (): TravelyProfile => ({
   birthDate: "",
   city: "",
   state: "",
-  country: "Brasil",
-  maritalStatus: "solteiro",
+  country: "Brazil",
+  maritalStatus: "single",
   hasMinorChildren: false,
   minorChildrenCount: 0,
   hobbies: [],
@@ -116,7 +116,7 @@ export function parseStoredProfile(raw: unknown): TravelyProfile | null {
   const birthDate = asString(data.birthDate, 10);
   const city = asString(data.city, LIMITS.place);
   const state = asString(data.state, LIMITS.place);
-  const country = asString(data.country, LIMITS.place) ?? "Brasil";
+  const country = asString(data.country, LIMITS.place) ?? "Brazil";
   const maritalStatus = data.maritalStatus;
   const hobbiesRaw = data.hobbies;
 
@@ -155,7 +155,7 @@ export function parseStoredProfile(raw: unknown): TravelyProfile | null {
     birthDate,
     city,
     state,
-    country: country || "Brasil",
+    country: country || "Brazil",
     maritalStatus: maritalStatus as MaritalStatus,
     hasMinorChildren: data.hasMinorChildren,
     minorChildrenCount: data.hasMinorChildren ? data.minorChildrenCount : 0,
@@ -170,7 +170,7 @@ export function clipProfile(profile: TravelyProfile): TravelyProfile {
     email: clip(profile.email, LIMITS.email).toLowerCase(),
     city: clip(profile.city, LIMITS.place),
     state: clip(profile.state, LIMITS.place),
-    country: clip(profile.country, LIMITS.place) || "Brasil",
+    country: clip(profile.country, LIMITS.place) || "Brazil",
     minorChildrenCount: Math.min(
       LIMITS.children,
       Math.max(0, Math.trunc(profile.minorChildrenCount)),
@@ -209,26 +209,26 @@ export function validateWizardStep(
   profile: TravelyProfile,
 ): string | null {
   if (step === 1 && !isFullName(profile.name)) {
-    return "Escreva o nome completo, por favor. Nome e sobrenome.";
+    return "Please write your full name. First and last name.";
   }
   if (step === 2 && !isValidEmail(profile.email)) {
-    return "Esse email parece incompleto. Falta o @ ou o resto depois dele.";
+    return "That email looks incomplete. It needs an @ and the part after it.";
   }
   if (step === 3 && !isValidBirthDate(profile.birthDate)) {
-    return "Escolha o dia, o mês e o ano.";
+    return "Please choose the day, month, and year.";
   }
   if (
     step === 4 &&
     (!clip(profile.city, LIMITS.place) || !clip(profile.state, LIMITS.place))
   ) {
-    return "Pode escrever a cidade e o estado.";
+    return "Please write the city and the state.";
   }
   if (step === 7 && profile.hobbies.length === 0) {
-    return "Escolha pelo menos uma coisa que você gosta de fazer.";
+    return "Please choose at least one thing you like to do.";
   }
   return null;
 }
 
 export function firstName(name: string): string {
-  return name.trim().split(/\s+/)[0] || "Você";
+  return name.trim().split(/\s+/)[0] || "there";
 }

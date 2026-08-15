@@ -33,13 +33,13 @@ async def create_place(payload: PlaceRequest) -> PlaceResponse:
         logger.warning("place lookup failed")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Não achei a cidade agora.",
+            detail="I could not find the city right now.",
         ) from exc
 
     place = place_from_nominatim(raw)
     if place is None:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Não achei a cidade agora.",
+            detail="I could not find the city right now.",
         )
     return PlaceResponse(**place)

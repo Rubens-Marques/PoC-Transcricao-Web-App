@@ -1,6 +1,6 @@
 # Frontend architecture — Travely (PoC)
 
-PoC web em `frontend/`. Next.js 16 App Router, React 19, Tailwind v4. Sem BaaS. Sem biblioteca de UI extra: Context7 (`/vercel/next.js`) confirma que interatividade (estado, `localStorage`, geolocation) fica em Client Components; a página `/entrar` permanece Server Component e só monta o client.
+PoC web em `frontend/`. Next.js 16 App Router, React 19, Tailwind v4. Sem BaaS. Sem biblioteca de UI extra: Context7 (`/vercel/next.js`) confirma que interatividade (estado, `localStorage`, geolocation) fica em Client Components; a página `/signup` permanece Server Component e só monta o client.
 
 ## Estrutura
 
@@ -8,7 +8,7 @@ PoC web em `frontend/`. Next.js 16 App Router, React 19, Tailwind v4. Sem BaaS. 
 frontend/
   app/                 rotas + tokens + layout
   components/          UI
-    entrar/            cadastro (escolha, wizard, conversa)
+    signup/            cadastro (escolha, wizard, conversa)
   lib/                 domínio de perfil e parse do chat
   hooks/               Web Speech
   services/            HTTP da busca
@@ -20,15 +20,15 @@ Separação atual:
 | Camada        | Onde                                   | Papel                                |
 | ------------- | -------------------------------------- | ------------------------------------ |
 | Domínio       | `lib/profile.ts`, `lib/signup-chat.ts` | perfil, validação, parse da conversa |
-| UI de entrada | `components/entrar/*`                  | escolha, wizard, chat com avatares   |
+| UI de entrada | `components/signup/*`                  | escolha, wizard, chat com avatares   |
 | Busca         | `VoiceRecorder`, `services/api.ts`     | voz → API                            |
 
-`EntrarApp` ainda concentra o wizard. A conversa saiu para `ChatSignup` + `UserAvatar` + `BotAvatar` + `EntrarHeader`. Próximo corte natural: `WizardSignup` no mesmo molde.
+`SignupApp` só escolhe o caminho. Wizard em `WizardSignup`, conversa em `ChatSignup`.
 
 ## Código
 
 - **Antes:** um único `EntrarApp` (~728 linhas) misturava escolha, wizard, chat, geolocation e parse.
-- **Agora:** `EntrarApp` só escolhe o caminho. Wizard em `WizardSignup`, conversa em `ChatSignup`, parse em `lib/signup-chat.ts`, perfil validado em `lib/profile.ts`. Localização: browser pede GPS, o FastAPI (`POST /api/place`) fala com o Nominatim.
+- **Agora:** `SignupApp` só escolhe o caminho. Wizard em `WizardSignup`, conversa em `ChatSignup`, parse em `lib/signup-chat.ts`, perfil validado em `lib/profile.ts`. Localização: browser pede GPS, o FastAPI (`POST /api/place`) fala com o Nominatim.
 - **Estado:** perfil no React + `localStorage`. Sem store. Adequado.
 - **Acoplamento:** Chat ainda é heurística local — a IA da VPS não está plugada, de propósito.
 
@@ -36,7 +36,7 @@ Não recomendar Lucide/Heroicons/shadcn: um SVG próprio cobre o ícone de usuá
 
 ## Performance
 
-- Bundle mínimo (Next + React + Tailwind). Sem lazy extra: `/entrar` e `/` são o produto.
+- Bundle mínimo (Next + React + Tailwind). Sem lazy extra: `/signup` e `/` são o produto.
 - `ChatSignup` só monta no modo conversa.
 - Sem memoização ainda — listas curtas (≤ ~15 turnos).
 - Imagens de marca são SVG/PNG pequenos em `/public/brand`.
@@ -52,7 +52,7 @@ Não recomendar Lucide/Heroicons/shadcn: um SVG próprio cobre o ícone de usuá
 
 ## Impeccable audit
 
-Alvo: `frontend/components/entrar/*` e a superfície `/entrar`.
+Alvo: `frontend/components/signup/*` e a superfície `/signup`.
 
 ### Audit Health Score
 

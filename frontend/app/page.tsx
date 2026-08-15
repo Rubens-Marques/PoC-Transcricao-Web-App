@@ -31,7 +31,7 @@ export default function HomePage() {
   useEffect(() => {
     const loaded = loadProfile();
     if (!loaded) {
-      router.replace("/entrar");
+      router.replace("/signup");
       return;
     }
     setProfile(loaded);
@@ -53,7 +53,7 @@ export default function HomePage() {
       setError(
         caught instanceof Error
           ? caught.message
-          : "Não consegui buscar agora. Tente de novo.",
+          : "I could not search right now. Please try again.",
       );
     } finally {
       setIsSearching(false);
@@ -64,7 +64,7 @@ export default function HomePage() {
     return (
       <main className="flex min-h-svh items-center justify-center px-5">
         <p className="text-corpo text-suave" role="status">
-          Abrindo o Brio…
+          Opening Brio…
         </p>
       </main>
     );
@@ -81,23 +81,23 @@ export default function HomePage() {
             className="w-20 px-3 text-apoio"
             onClick={() => {
               clearProfile();
-              router.push("/entrar");
+              router.push("/signup");
             }}
           >
-            Sair
+            Sign out
           </Button>
         </div>
       </header>
 
       <main
-        id="conteudo"
+        id="content"
         className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center gap-10 px-5 py-12 text-center"
       >
         <div>
-          <h1>Olá, {firstName(profile.name)}.</h1>
+          <h1>Hello, {firstName(profile.name)}.</h1>
           <p className="mt-4 text-corpo text-suave">
-            Para onde você quer ir? Conte o lugar, a época, com quem vai e
-            quanto quer gastar.
+            Where do you want to go? Tell us the place, the time of year, who is
+            coming, and how much you want to spend.
           </p>
         </div>
 

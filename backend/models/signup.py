@@ -20,7 +20,7 @@ SignupField = Literal[
     "hobbies",
 ]
 
-MaritalStatus = Literal["solteiro", "casado", "uniao", "divorciado", "viuvo"]
+MaritalStatus = Literal["single", "married", "partnership", "divorced", "widowed"]
 
 
 class SignupAnswer(BaseModel):

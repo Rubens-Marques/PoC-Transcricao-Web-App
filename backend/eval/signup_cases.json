@@ -1,35 +1,35 @@
 {
   "_readme": [
-    "Conjunto de avaliação da interpretação das respostas de cadastro.",
-    "Cada caso lista só os campos que a resposta realmente expressa.",
-    "'strict_null' lista campos que DEVEM sair nulos.",
-    "Um valor em lista significa 'qualquer um destes serve'.",
-    "'tag' agrupa por classe de dificuldade para o relatório."
+    "Evaluation set for signup answer interpretation.",
+    "Each case lists only the fields the answer actually expresses.",
+    "'strict_null' lists fields that MUST come back null.",
+    "A list value means 'any of these is acceptable'.",
+    "'tag' groups cases by difficulty for the report."
   ],
   "cases": [
     {
-      "tag": "nome",
+      "tag": "name",
       "field": "name",
       "text": "Maria Aparecida Silva",
       "expected": { "full_name": "Maria Aparecida Silva" }
     },
     {
-      "tag": "nome",
+      "tag": "name",
       "field": "name",
-      "text": "olha, meu nome é Maria Silva",
+      "text": "hi, my name is Maria Silva",
       "expected": { "full_name": "Maria Silva" }
     },
     {
-      "tag": "nome",
+      "tag": "name",
       "field": "name",
-      "text": "pode me chamar de Zé",
+      "text": "you can call me Joe",
       "expected": { "full_name": null },
       "strict_null": ["full_name"]
     },
     {
-      "tag": "nome",
+      "tag": "name",
       "field": "name",
-      "text": "eu sou a Dona Cleusa",
+      "text": "I am Mrs. Cleusa",
       "expected": { "full_name": null },
       "strict_null": ["full_name"]
     },
@@ -41,196 +41,180 @@
       "expected": { "email": "maria.silva@uol.com.br" }
     },
     {
-      "tag": "email-voz",
+      "tag": "email-voice",
       "field": "email",
-      "text": "maria arroba gmail ponto com",
+      "text": "maria at gmail dot com",
       "expected": { "email": "maria@gmail.com" }
     },
     {
-      "tag": "email-voz",
+      "tag": "email-voice",
       "field": "email",
-      "text": "é joão silva arroba hotmail ponto com",
+      "text": "it is john silva at hotmail dot com",
       "expected": {
-        "email": [
-          "joaosilva@hotmail.com",
-          "joao.silva@hotmail.com",
-          "joãosilva@hotmail.com"
-        ]
+        "email": ["johnsilva@hotmail.com", "john.silva@hotmail.com"]
       }
     },
 
     {
-      "tag": "data",
+      "tag": "date",
       "field": "birthDate",
-      "text": "15/03/1952",
+      "text": "03/15/1952",
       "expected": { "birth_date": "1952-03-15" }
     },
     {
-      "tag": "data",
+      "tag": "date",
       "field": "birthDate",
-      "text": "nasci em 15 de março de 1952",
+      "text": "I was born on March 15, 1952",
       "expected": { "birth_date": "1952-03-15" }
     },
     {
-      "tag": "data",
+      "tag": "date",
       "field": "birthDate",
-      "text": "primeiro de janeiro de 1948",
+      "text": "January 1, 1948",
       "expected": { "birth_date": "1948-01-01" }
     },
     {
-      "tag": "idade",
+      "tag": "age",
       "field": "birthDate",
-      "text": "tenho 71 anos",
+      "text": "I am 71 years old",
       "expected": { "age": 71 },
       "strict_null": ["birth_date"]
     },
     {
-      "tag": "idade",
+      "tag": "age",
       "field": "birthDate",
-      "text": "já fiz 68 aninhos",
+      "text": "I just turned 68",
       "expected": { "age": 68 },
       "strict_null": ["birth_date"]
     },
 
     {
-      "tag": "civil-direto",
+      "tag": "marital-direct",
       "field": "maritalStatus",
-      "text": "solteiro",
-      "expected": { "marital_status": "solteiro" }
+      "text": "single",
+      "expected": { "marital_status": "single" }
     },
     {
-      "tag": "civil-giria",
+      "tag": "marital-slang",
       "field": "maritalStatus",
-      "text": "sou solteirão mesmo",
-      "expected": { "marital_status": "solteiro" }
+      "text": "I am single",
+      "expected": { "marital_status": "single" }
     },
     {
-      "tag": "civil-giria",
+      "tag": "marital-slang",
       "field": "maritalStatus",
-      "text": "tô solteira",
-      "expected": { "marital_status": "solteiro" }
+      "text": "never married",
+      "expected": { "marital_status": "single" }
     },
     {
-      "tag": "civil-giria",
+      "tag": "marital-context",
       "field": "maritalStatus",
-      "text": "nunca casei não",
-      "expected": { "marital_status": "solteiro" }
+      "text": "married for 20 years",
+      "expected": { "marital_status": "married" }
     },
     {
-      "tag": "civil-contexto",
+      "tag": "marital-context",
       "field": "maritalStatus",
-      "text": "casado há 20 anos",
-      "expected": { "marital_status": "casado" }
+      "text": "I have been married to Joaquim since 1978",
+      "expected": { "marital_status": "married" }
     },
     {
-      "tag": "civil-contexto",
+      "tag": "marital-context",
       "field": "maritalStatus",
-      "text": "sou casada com o Joaquim desde 1978",
-      "expected": { "marital_status": "casado" }
+      "text": "I have been a widow since 2010",
+      "expected": { "marital_status": "widowed" }
     },
     {
-      "tag": "civil-contexto",
+      "tag": "marital-context",
       "field": "maritalStatus",
-      "text": "sou viúva desde 2010",
-      "expected": { "marital_status": "viuvo" }
+      "text": "I lost my husband three years ago",
+      "expected": { "marital_status": "widowed" }
     },
     {
-      "tag": "civil-contexto",
+      "tag": "marital-slang",
       "field": "maritalStatus",
-      "text": "perdi meu marido faz três anos",
-      "expected": { "marital_status": "viuvo" }
+      "text": "we live together",
+      "expected": { "marital_status": "partnership" }
     },
     {
-      "tag": "civil-giria",
+      "tag": "marital-slang",
       "field": "maritalStatus",
-      "text": "moro junto com meu companheiro",
-      "expected": { "marital_status": "uniao" }
+      "text": "I separated a while ago",
+      "expected": { "marital_status": "divorced" }
     },
     {
-      "tag": "civil-giria",
+      "tag": "marital-empty",
       "field": "maritalStatus",
-      "text": "me separei faz tempo",
-      "expected": { "marital_status": "divorciado" }
-    },
-    {
-      "tag": "civil-giria",
-      "field": "maritalStatus",
-      "text": "sou desquitada",
-      "expected": { "marital_status": "divorciado" }
-    },
-    {
-      "tag": "civil-vazio",
-      "field": "maritalStatus",
-      "text": "prefiro não dizer",
+      "text": "I would rather not say",
       "strict_null": ["marital_status"]
     },
 
     {
-      "tag": "filhos",
+      "tag": "children",
       "field": "children",
-      "text": "não tenho",
+      "text": "I do not",
       "expected": { "has_minor_children": false, "minor_children_count": 0 }
     },
     {
-      "tag": "filhos",
+      "tag": "children",
       "field": "children",
-      "text": "tenho dois pequenos",
+      "text": "I have two little ones",
       "expected": { "has_minor_children": true, "minor_children_count": 2 }
     },
     {
-      "tag": "filhos",
+      "tag": "children",
       "field": "children",
-      "text": "sim, 3",
+      "text": "yes, 3",
       "expected": { "has_minor_children": true, "minor_children_count": 3 }
     },
     {
-      "tag": "filhos-armadilha",
+      "tag": "children-trap",
       "field": "children",
-      "text": "tenho dois filhos mas já são adultos",
+      "text": "I have two children but they are grown",
       "expected": { "has_minor_children": false, "minor_children_count": 0 }
     },
     {
-      "tag": "filhos-armadilha",
+      "tag": "children-trap",
       "field": "children",
-      "text": "meus filhos já casaram tudo",
+      "text": "my children are all married now",
       "expected": { "has_minor_children": false, "minor_children_count": 0 }
     },
 
     {
-      "tag": "local",
+      "tag": "place",
       "field": "place",
-      "text": "moro em Campinas, São Paulo",
+      "text": "I live in Campinas, São Paulo",
       "expected": { "city": "Campinas", "state": "São Paulo" }
     },
     {
-      "tag": "local",
+      "tag": "place",
       "field": "place",
-      "text": "sou de Belo Horizonte, Minas Gerais",
-      "expected": { "city": "Belo Horizonte", "state": "Minas Gerais" }
+      "text": "I am from Austin, Texas",
+      "expected": { "city": "Austin", "state": "Texas" }
     },
     {
-      "tag": "local",
+      "tag": "place",
       "field": "place",
-      "text": "aqui em Recife mesmo",
+      "text": "here in Recife",
       "expected": { "city": "Recife" }
     },
 
     {
       "tag": "hobbies",
       "field": "hobbies",
-      "text": "gosto de caminhar, de fotografia e de cozinhar",
+      "text": "I like walking, photography, and cooking",
       "expected": { "hobbies_min": 3 }
     },
     {
       "tag": "hobbies",
       "field": "hobbies",
-      "text": "adoro cuidar do meu jardim",
+      "text": "I love taking care of my garden",
       "expected": { "hobbies_min": 1 }
     },
     {
       "tag": "hobbies",
       "field": "hobbies",
-      "text": "eu danço forró e jogo baralho com as amigas",
+      "text": "I dance and play cards with friends",
       "expected": { "hobbies_min": 2 }
     }
   ]

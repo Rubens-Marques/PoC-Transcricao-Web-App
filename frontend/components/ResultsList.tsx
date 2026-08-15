@@ -9,10 +9,9 @@ export function ResultsList({ recommendations }: ResultsListProps) {
   if (recommendations.length === 0) {
     return (
       <section className="tv-placa p-10 text-center">
-        <h2>Ainda não achei uma viagem assim.</h2>
-        {/* Vazio que diz o que fazer em seguida, não só que deu vazio. */}
+        <h2>I have not found a trip like that yet.</h2>
         <p className="mt-3 text-corpo text-suave">
-          Tente outra época do ano, outro tipo de viagem ou um valor diferente.
+          Try another time of year, another kind of trip, or a different budget.
         </p>
       </section>
     );
@@ -22,8 +21,8 @@ export function ResultsList({ recommendations }: ResultsListProps) {
     <section className="text-center">
       <h2>
         {recommendations.length === 1
-          ? "Achei 1 viagem para você"
-          : `Achei ${recommendations.length} viagens para você`}
+          ? "I found 1 trip for you"
+          : `I found ${recommendations.length} trips for you`}
       </h2>
       <div className="mt-6 grid gap-5 md:grid-cols-2">
         {recommendations.map((recommendation) => (

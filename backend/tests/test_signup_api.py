@@ -20,18 +20,18 @@ def test_interprets_a_marital_status_answer(client: TestClient) -> None:
     # Act
     response = client.post(
         "/api/signup/interpret",
-        json={"field": "maritalStatus", "text": "casado há 20 anos"},
+        json={"field": "maritalStatus", "text": "married for 20 years"},
     )
 
     # Assert
     assert response.status_code == 200
-    assert response.json()["answer"]["marital_status"] == "casado"
+    assert response.json()["answer"]["marital_status"] == "married"
 
 
 def test_answer_carries_every_field_the_ui_reads(client: TestClient) -> None:
     # Act
     response = client.post(
-        "/api/signup/interpret", json={"field": "name", "text": "meu nome é Maria"}
+        "/api/signup/interpret", json={"field": "name", "text": "my name is Maria"}
     )
 
     # Assert

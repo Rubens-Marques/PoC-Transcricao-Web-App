@@ -138,14 +138,14 @@ as telas.
 
 ## 5. Os dois modelos de cadastro
 
-O `/entrar` oferece **dois fluxos que coletam exatamente os mesmos sete campos**:
+O `/signup` oferece **dois fluxos que coletam exatamente os mesmos sete campos**:
 
 - **Passo a passo** (`WizardSignup`) — uma pergunta por tela, barra de progresso.
 - **Conversando** (`ChatSignup`) — balões de mensagem, o assistente pergunta e a
   pessoa responde.
 
 Isso é deliberado: os dois existem para serem comparados em teste com usuários
-reais antes de escolher um. Por isso ambos usam a mesma casca (`EntrarShell`) —
+reais antes de escolher um. Por isso ambos usam a mesma casca (`SignupShell`) —
 topo, largura de leitura e posição da ação principal idênticos —, de modo que a
 diferença medida seja o modelo de interação, e não a moldura.
 
@@ -175,15 +175,15 @@ falsearia a comparação.
 
 ## 7. Acessibilidade — o que já está no código
 
-- `lang="pt-BR"`, link "Pular para o conteúdo" como primeiro tab de toda tela.
+- `lang="en"`, link "Skip to content" as the first tab stop on every screen.
 - Foco movido para a pergunta nova a cada passo do wizard, e para os resultados
   quando a busca responde — sem isso, quem usa teclado ou leitor de tela não
   fica sabendo que a tela mudou.
 - Conversa marcada com `role="log"` e `aria-live="polite"`; cada balão diz
-  "Você:" ou "Brio:" para leitor de tela, já que lado e cor não chegam nele.
+  "You:" or "Brio:" para leitor de tela, já que lado e cor não chegam nele.
 - `prefers-reduced-motion` desliga as animações — inclusive a pausa de digitação
   do chat, que vai a zero.
-- Mensagens de erro em português, dizendo o que fazer em seguida (o hook de voz
+- Mensagens de erro em inglês, dizendo o que fazer em seguida (o hook de voz
   devolvia `service-not-allowed` cru).
 - Enums do backend (`beach`, `December`, `low`) traduzidos antes de chegar à
   tela.

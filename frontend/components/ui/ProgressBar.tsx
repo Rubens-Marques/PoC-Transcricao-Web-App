@@ -11,7 +11,7 @@ export function ProgressBar({ atual, total }: ProgressBarProps) {
   return (
     <div className="flex flex-col items-center">
       <p className="text-apoio text-suave">
-        Pergunta {atual} de {total}
+        Question {atual} of {total}
       </p>
       <div
         className="tv-trilho mt-3 w-full max-w-xs"
@@ -19,7 +19,7 @@ export function ProgressBar({ atual, total }: ProgressBarProps) {
         aria-valuemin={1}
         aria-valuemax={total}
         aria-valuenow={atual}
-        aria-valuetext={`Pergunta ${atual} de ${total}`}
+        aria-valuetext={`Question ${atual} of ${total}`}
       >
         <div className="tv-trilho__preenche" style={{ width: `${pct}%` }} />
       </div>

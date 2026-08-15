@@ -3,8 +3,8 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
-import { EntrarShell } from "@/components/entrar/EntrarShell";
-import { SignupReview } from "@/components/entrar/SignupReview";
+import { SignupReview } from "@/components/signup/SignupReview";
+import { SignupShell } from "@/components/signup/SignupShell";
 import { IconPin } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
 import { Callout } from "@/components/ui/Callout";
@@ -23,8 +23,8 @@ import { lookupPlace } from "@/services/api";
 const TOTAL = 7;
 
 const SIM_NAO = [
-  { id: "nao" as const, label: "Não tenho" },
-  { id: "sim" as const, label: "Sim, tenho" },
+  { id: "no" as const, label: "I do not" },
+  { id: "yes" as const, label: "Yes, I do" },
 ];
 
 export function WizardSignup({
@@ -93,7 +93,7 @@ export function WizardSignup({
   function fillLocation() {
     if (!navigator.geolocation) {
       setError(
-        "Este aparelho não informa a localização. Pode escrever abaixo.",
+        "This device cannot share your location. You can write it below.",
       );
       return;
     }
@@ -120,7 +120,7 @@ export function WizardSignup({
           setError(
             caught instanceof Error
               ? caught.message
-              : "Não consegui preencher sozinho. Pode escrever a cidade.",
+              : "I could not fill that in. You can write the city.",
           );
         } finally {
           setLocating(false);
@@ -128,7 +128,7 @@ export function WizardSignup({
       },
       () => {
         setLocating(false);
-        setError("Sem permissão de localização. Pode escrever a cidade.");
+        setError("Location permission was denied. You can write the city.");
       },
       { timeout: 10000, maximumAge: 300000 },
     );
@@ -136,30 +136,30 @@ export function WizardSignup({
 
   if (review) {
     return (
-      <EntrarShell
-        modo="Passo a passo"
-        progresso={{ atual: TOTAL, total: TOTAL }}
+      <SignupShell
+        mode="Step by step"
+        progress={{ current: TOTAL, total: TOTAL }}
         onBack={() => setReview(null)}
-        rodape={
+        footer={
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button tom="claro" largo onClick={onBack}>
-              Refazer o cadastro
+              Start over
             </Button>
             <Button tom="sol" largo onClick={() => onFinish(review)}>
-              Confirmar
+              Confirm
             </Button>
           </div>
         }
       >
         <SignupReview profile={review} />
-      </EntrarShell>
+      </SignupShell>
     );
   }
 
   return (
-    <EntrarShell
-      modo="Passo a passo"
-      progresso={{ atual: step, total: TOTAL }}
+    <SignupShell
+      mode="Step by step"
+      progress={{ current: step, total: TOTAL }}
       onBack={() => {
         if (step === 1) {
           onBack();
@@ -168,7 +168,7 @@ export function WizardSignup({
         setError(null);
         setStep((current) => current - 1);
       }}
-      rodape={
+      footer={
         <Button
           tom="sol"
           largo
@@ -176,7 +176,7 @@ export function WizardSignup({
           form="wizard"
           disabled={busy || locating}
         >
-          {step === TOTAL ? "Conferir dados" : "Continuar"}
+          {step === TOTAL ? "Review details" : "Continue"}
         </Button>
       }
     >
@@ -200,8 +200,8 @@ export function WizardSignup({
           {step === 1 && (
             <TextField
               id="name"
-              label="Qual o seu nome completo?"
-              hint="Nome e sobrenome."
+              label="What is your full name?"
+              hint="First and last name."
               placeholder="Maria Silva"
               value={profile.name}
               autoComplete="name"
@@ -213,8 +213,8 @@ export function WizardSignup({
           {step === 2 && (
             <TextField
               id="email"
-              label="Qual é o seu email?"
-              hint="A gente usa só para achar a sua conta depois."
+              label="What is your email?"
+              hint="We only use it to find your account later."
               placeholder="maria@email.com"
               type="email"
               value={profile.email}
@@ -227,8 +227,8 @@ export function WizardSignup({
           {step === 3 && (
             <TextField
               id="birthDate"
-              label="Quando você nasceu?"
-              hint="Dia, mês e ano."
+              label="When were you born?"
+              hint="Day, month, and year."
               type="date"
               value={profile.birthDate}
               autoComplete="bday"
@@ -239,10 +239,10 @@ export function WizardSignup({
           {step === 4 && (
             <fieldset className="flex w-full flex-col items-center">
               <legend className="font-display text-titulo">
-                Onde você mora?
+                Where do you live?
               </legend>
               <p className="mt-2 text-apoio text-suave">
-                Use a localização do aparelho ou escreva você mesmo.
+                Use this device’s location, or write it yourself.
               </p>
 
               <Button
@@ -251,15 +251,15 @@ export function WizardSignup({
                 disabled={locating}
               >
                 <IconPin className="h-5 w-5" />
-                {locating ? "Procurando…" : "Usar minha localização"}
+                {locating ? "Looking…" : "Use my location"}
               </Button>
 
               <div className="mt-8 grid w-full gap-6 sm:grid-cols-2">
                 <TextField
                   id="city"
-                  label="Cidade"
+                  label="City"
                   compacto
-                  placeholder="Campinas"
+                  placeholder="Austin"
                   value={profile.city}
                   autoComplete="address-level2"
                   maxLength={LIMITS.place}
@@ -267,9 +267,9 @@ export function WizardSignup({
                 />
                 <TextField
                   id="state"
-                  label="Estado"
+                  label="State"
                   compacto
-                  placeholder="São Paulo"
+                  placeholder="Texas"
                   value={profile.state}
                   autoComplete="address-level1"
                   maxLength={LIMITS.place}
@@ -279,9 +279,9 @@ export function WizardSignup({
               <div className="mt-6 w-full">
                 <TextField
                   id="country"
-                  label="País"
+                  label="Country"
                   compacto
-                  placeholder="Brasil"
+                  placeholder="United States"
                   value={profile.country}
                   autoComplete="country-name"
                   maxLength={LIMITS.place}
@@ -294,14 +294,14 @@ export function WizardSignup({
           {step === 5 && (
             <fieldset className="flex w-full flex-col items-center">
               <legend className="font-display text-titulo">
-                Qual é o seu estado civil?
+                What is your marital status?
               </legend>
               <p className="mt-2 text-apoio text-suave">
-                Escolha o que vale para você hoje.
+                Choose what is true for you today.
               </p>
               <div className="mt-8 w-full">
                 <OptionList
-                  legend="Estado civil"
+                  legend="Marital status"
                   options={MARITAL_OPTIONS}
                   value={profile.maritalStatus}
                   onChange={(id) => onPatch({ maritalStatus: id })}
@@ -314,21 +314,21 @@ export function WizardSignup({
           {step === 6 && (
             <fieldset className="flex w-full flex-col items-center">
               <legend className="font-display text-titulo">
-                Você tem filhos menores de 18 anos?
+                Do you have children under 18?
               </legend>
               <p className="mt-2 text-apoio text-suave">
-                Isso ajuda a sugerir viagens com a companhia certa.
+                This helps us suggest trips with the right company.
               </p>
               <div className="mt-8 w-full">
                 <OptionList
-                  legend="Filhos menores"
+                  legend="Children under 18"
                   options={SIM_NAO}
-                  value={profile.hasMinorChildren ? "sim" : "nao"}
+                  value={profile.hasMinorChildren ? "yes" : "no"}
                   onChange={(id) =>
                     onPatch({
-                      hasMinorChildren: id === "sim",
+                      hasMinorChildren: id === "yes",
                       minorChildrenCount:
-                        id === "sim"
+                        id === "yes"
                           ? Math.max(1, profile.minorChildrenCount)
                           : 0,
                     })
@@ -338,7 +338,7 @@ export function WizardSignup({
               {profile.hasMinorChildren && (
                 <div className="mt-8">
                   <Counter
-                    label="Quantos filhos"
+                    label="How many children"
                     value={profile.minorChildrenCount}
                     min={1}
                     max={LIMITS.children}
@@ -352,10 +352,10 @@ export function WizardSignup({
           {step === 7 && (
             <fieldset className="flex w-full flex-col items-center">
               <legend className="font-display text-titulo">
-                O que você gosta de fazer?
+                What do you like to do?
               </legend>
               <p className="mt-2 text-apoio text-suave">
-                Marque quantos quiser. Isso guia as sugestões de viagem.
+                Pick as many as you like. This guides the trip suggestions.
               </p>
               <div className="mt-8 w-full">
                 <MultiList
@@ -374,9 +374,9 @@ export function WizardSignup({
               <div className="mt-8 w-full">
                 <TextField
                   id="hobbyExtra"
-                  label="Outro, se quiser"
+                  label="Something else, if you want"
                   compacto
-                  placeholder="Pesca"
+                  placeholder="Fishing"
                   value={hobbyExtra}
                   maxLength={LIMITS.hobby}
                   onChange={setHobbyExtra}
@@ -392,6 +392,6 @@ export function WizardSignup({
           )}
         </motion.div>
       </form>
-    </EntrarShell>
+    </SignupShell>
   );
 }

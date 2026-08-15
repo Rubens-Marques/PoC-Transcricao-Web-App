@@ -63,20 +63,20 @@ FIELD_SCHEMAS: dict[str, dict[str, object]] = {
     "name": _schema(
         {
             "full_name": _nullable(
-                {"type": "string", "description": "Só o nome da pessoa."}
+                {"type": "string", "description": "The person's name only."}
             )
         }
     ),
     "email": _schema(
-        {"email": _nullable({"type": "string", "description": "Endereço de email."})}
+        {"email": _nullable({"type": "string", "description": "Email address."})}
     ),
     "birthDate": _schema(
         {
             "birth_date": _nullable(
-                {"type": "string", "description": "Data completa em YYYY-MM-DD."}
+                {"type": "string", "description": "Full date as YYYY-MM-DD."}
             ),
             "age": _nullable(
-                {"type": "integer", "description": "Idade em anos, se dita."}
+                {"type": "integer", "description": "Age in years, if spoken."}
             ),
         }
     ),
@@ -87,7 +87,7 @@ FIELD_SCHEMAS: dict[str, dict[str, object]] = {
             "country": _nullable(
                 {
                     "type": "string",
-                    "description": "Nome do país em português.",
+                    "description": "Country name in English.",
                 }
             ),
         }
@@ -106,84 +106,84 @@ FIELD_SCHEMAS: dict[str, dict[str, object]] = {
     ),
 }
 
-BASE_PROMPT = """Você extrai UMA informação da resposta de uma pessoa idosa \
-num cadastro em português do Brasil.
+BASE_PROMPT = """You extract ONE fact from an older person's signup answer.
+Reply in English. Field values must be English (country names, hobbies, \
+marital status tokens).
 
-Regras que valem para todas as perguntas:
-- Só preencha o que a pessoa realmente disse. Nunca chute. Use null quando não der.
-- A pessoa fala informalmente, com gíria e com frase em volta. Entenda o sentido, \
-não a palavra exata.
-- O texto pode vir de reconhecimento de fala, então pode estar sem pontuação e \
-com palavras escritas por extenso.
-Responda apenas com um objeto JSON do schema. Sem prosa, sem cercas de código."""
+Rules for every question:
+- Only fill what the person actually said. Never guess. Use null when unsure.
+- They speak informally, with extra words around the fact. Read the meaning, \
+not the exact wording.
+- The text may come from speech recognition, so it can lack punctuation and \
+spell words out ("at", "dot").
+Reply with a JSON object that matches the schema. No prose, no code fences."""
 
 FIELD_PROMPTS: dict[str, str] = {
-    "name": """Pergunta feita: "Qual o seu nome completo?"
-Extraia o nome completo (nome e sobrenome), sem a frase em volta e sem saudação.
-Um só nome não basta: deixe full_name nulo.
-"meu nome é Maria Silva" -> {"full_name":"Maria Silva"}
-"olha, eu sou a Dona Cleusa Souza" -> {"full_name":"Cleusa Souza"}
-"pode me chamar de Zé" -> {"full_name":null}
+    "name": """Question asked: "What is your full name?"
+Extract the full name (first and last), without the sentence around it and \
+without a greeting.
+A single given name is not enough: leave full_name null.
+"my name is Maria Silva" -> {"full_name":"Maria Silva"}
+"hi, I am Mrs. Cleusa Souza" -> {"full_name":"Cleusa Souza"}
+"you can call me Joe" -> {"full_name":null}
 "Maria" -> {"full_name":null}
-"bom dia" -> {"full_name":null}""",
-    "email": """Pergunta feita: "Qual é o seu email?"
-Monte o endereço. Ditado por voz vem com "arroba" e "ponto" por extenso e com \
-espaços no meio — junte tudo e devolva em minúsculas.
-"maria arroba gmail ponto com" -> {"email":"maria@gmail.com"}
+"good morning" -> {"full_name":null}""",
+    "email": """Question asked: "What is your email?"
+Build the address. Spoken email uses "at" and "dot" and may have spaces — \
+join it and return lowercase.
+"maria at gmail dot com" -> {"email":"maria@gmail.com"}
 "MARIA.SILVA@UOL.COM.BR" -> {"email":"maria.silva@uol.com.br"}
-"não tenho email" -> {"email":null}""",
-    "birthDate": f"""Pergunta feita: "Quando você nasceu?"
-Hoje é {date.today().isoformat()}.
-Se a pessoa deu a data completa, devolva birth_date em YYYY-MM-DD e age null.
-Se deu só a idade, devolva age e birth_date null — NUNCA invente dia e mês.
-"15/03/1952" -> {{"birth_date":"1952-03-15","age":null}}
-"nasci em 15 de março de 1952" -> {{"birth_date":"1952-03-15","age":null}}
-"tenho 71 anos" -> {{"birth_date":null,"age":71}}
-"sou de 1950" -> {{"birth_date":null,"age":null}}""",
-    "place": """Pergunta feita: "Onde você mora?"
-Separe cidade, estado e país. Este é o endereço da pessoa e vai ser mostrado \
-para ela, então o país sai em PORTUGUÊS.
-Se a pessoa não disse o país, assuma Brasil.
-"moro em Campinas, São Paulo" -> \
-{"city":"Campinas","state":"São Paulo","country":"Brasil"}
-"sou de Belo Horizonte, Minas" -> \
-{"city":"Belo Horizonte","state":"Minas Gerais","country":"Brasil"}
-"aqui em Lisboa, Portugal" -> \
-{"city":"Lisboa","state":null,"country":"Portugal"}""",
-    "maritalStatus": """Pergunta feita: "Qual é o seu estado civil?"
-Escolha um dos cinco valores. Entenda gíria, flexão de gênero e frase com contexto.
-- solteiro: "solteiro", "solteira", "solteirão", "nunca casei", "tô solteira"
-- casado: "casado", "casada", "casado há 20 anos", "sou casado sim"
-- uniao: "união estável", "moro junto", "amasiado", "vivo com meu companheiro"
-- divorciado: "divorciado", "divorciada", "me separei", "sou separada", \
-"desquitado", "desquitada" (termo antigo para separação judicial, comum entre \
-quem casou antes de 1977 — NÃO confundir com viuvez)
-- viuvo: "viúvo", "viúva", "perdi minha esposa", "sou viúva desde 2010"
-Atenção: "casado há 20 anos" é casado (a pessoa É casada). \
-"sou viúva desde 2010" é viuvo.
-"sei lá" -> {"marital_status":null}""",
-    "children": """Pergunta feita: "Você tem filhos MENORES de 18 anos?"
-Conte apenas os menores de idade.
-"não tenho" -> {"has_minor_children":false,"minor_children_count":0}
-"tenho dois" -> {"has_minor_children":true,"minor_children_count":2}
-"sim, 3 pequenos" -> {"has_minor_children":true,"minor_children_count":3}
-"tenho filhos mas já são adultos" -> \
+"I do not have email" -> {"email":null}""",
+    "birthDate": f"""Question asked: "When were you born?"
+Today is {date.today().isoformat()}.
+If they gave a full date, return birth_date as YYYY-MM-DD and age null.
+If they only gave an age, return age and birth_date null — NEVER invent day \
+and month.
+"03/15/1952" -> {{"birth_date":"1952-03-15","age":null}}
+"I was born on March 15, 1952" -> {{"birth_date":"1952-03-15","age":null}}
+"I am 71 years old" -> {{"birth_date":null,"age":71}}
+"I am from 1950" -> {{"birth_date":null,"age":null}}""",
+    "place": """Question asked: "Where do you live?"
+Split city, state, and country. The country name must be in English.
+If they did not say a country, assume Brazil.
+"I live in Campinas, São Paulo" -> \
+{"city":"Campinas","state":"São Paulo","country":"Brazil"}
+"I am from Austin, Texas" -> \
+{"city":"Austin","state":"Texas","country":"United States"}
+"here in Lisbon, Portugal" -> \
+{"city":"Lisbon","state":null,"country":"Portugal"}""",
+    "maritalStatus": """Question asked: "What is your marital status?"
+Pick one of the five values. Understand slang and extra context.
+- single: "single", "never married", "I am single"
+- married: "married", "I have been married for 20 years"
+- partnership: "domestic partnership", "we live together", "civil union"
+- divorced: "divorced", "I separated", "I am separated"
+- widowed: "widowed", "widow", "widower", "I lost my wife"
+Note: "married for 20 years" is married (they ARE married). \
+"I have been a widow since 2010" is widowed.
+"I don't know" -> {"marital_status":null}""",
+    "children": """Question asked: "Do you have children UNDER 18?"
+Count only minors.
+"I do not" -> {"has_minor_children":false,"minor_children_count":0}
+"I have two" -> {"has_minor_children":true,"minor_children_count":2}
+"yes, 3 little ones" -> {"has_minor_children":true,"minor_children_count":3}
+"I have children but they are grown" -> \
 {"has_minor_children":false,"minor_children_count":0}
-"meus netos moram comigo" -> {"has_minor_children":null,\
+"my grandchildren live with me" -> {"has_minor_children":null,\
 "minor_children_count":null}""",
-    "hobbies": """Pergunta feita: "O que você gosta de fazer?"
-Liste cada coisa como um item curto, em substantivo e com inicial maiúscula.
-"gosto de caminhar, de fotografia e de cozinhar" -> \
-{"hobbies":["Caminhada","Fotografia","Culinária"]}
-"adoro cuidar do meu jardim" -> {"hobbies":["Jardim"]}
-"nada" -> {"hobbies":[]}""",
+    "hobbies": """Question asked: "What do you like to do?"
+List each thing as a short English noun, capitalized.
+"I like walking, photography, and cooking" -> \
+{"hobbies":["Walking","Photography","Cooking"]}
+"I love taking care of my garden" -> {"hobbies":["Gardening"]}
+"nothing" -> {"hobbies":[]}""",
 }
 
 
 async def interpret_signup_answer(field: SignupField, text: str) -> SignupAnswer:
     """Entende UMA resposta do cadastro conversado."""
     if field not in FIELD_SCHEMAS:
-        raise LLMConfigurationError(f"Campo de cadastro desconhecido: {field!r}.")
+        raise LLMConfigurationError(f"Unknown signup field: {field!r}.")
 
     # Resposta já estruturada (nome e sobrenome, email com @, "casado"): não
     # espera o modelo. No CPU da VPS isso é a diferença entre 50 ms e 7 s.
@@ -355,6 +355,16 @@ def _valid_iso_date(value: str | None) -> str | None:
 # é justamente esta classe de parsing que o modelo veio substituir.
 
 _NUMBER_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
     "um": 1,
     "uma": 1,
     "dois": 2,
@@ -370,6 +380,18 @@ _NUMBER_WORDS = {
 }
 
 _MONTH_NAMES = {
+    "january": 1,
+    "february": 2,
+    "march": 3,
+    "april": 4,
+    "may": 5,
+    "june": 6,
+    "july": 7,
+    "august": 8,
+    "september": 9,
+    "october": 10,
+    "november": 11,
+    "december": 12,
     "janeiro": 1,
     "fevereiro": 2,
     "marco": 3,
@@ -385,23 +407,30 @@ _MONTH_NAMES = {
 }
 
 _COUNTRIES = {
-    "brasil": "Brasil",
-    "brazil": "Brasil",
+    "brasil": "Brazil",
+    "brazil": "Brazil",
     "portugal": "Portugal",
-    "italia": "Itália",
-    "espanha": "Espanha",
+    "italia": "Italy",
+    "italy": "Italy",
+    "espanha": "Spain",
+    "spain": "Spain",
     "argentina": "Argentina",
+    "united states": "United States",
+    "usa": "United States",
 }
 
 _NAME_PREFIXES = re.compile(
-    r"^(?:olha|olá|ola|oi|bom dia|boa tarde|boa noite)?[,\s]*"
+    r"^(?:hi|hello|hey|olha|olá|ola|oi|good morning|good afternoon|"
+    r"good evening|bom dia|boa tarde|boa noite)?[,\s]*"
+    r"(?:my\s+name\s+is|i\s+am|i'm|you\s+can\s+call\s+me|"
     r"(?:o\s+)?(?:meu\s+nome\s+(?:é|e)|me\s+chamo|pode\s+me\s+chamar\s+de|"
-    r"eu\s+sou\s+(?:o|a)?|sou\s+(?:o|a)?)\s*",
+    r"eu\s+sou\s+(?:o|a)?|sou\s+(?:o|a)?))\s*",
     re.IGNORECASE,
 )
 
 _TITLES = re.compile(
-    r"^(?:dona|dono|seu|sr\.?|sra\.?|senhor|senhora)\s+", re.IGNORECASE
+    r"^(?:mr\.?|mrs\.?|ms\.?|miss|dona|dono|seu|sr\.?|sra\.?|senhor|senhora)\s+",
+    re.IGNORECASE,
 )
 
 
@@ -481,13 +510,30 @@ def _mock_email(text: str) -> str | None:
     direct = re.search(r"[^\s@]+@[^\s@]+\.[^\s@]+", text)
     if direct:
         return direct.group(0)
-    # Ditado por voz: "maria silva arroba gmail ponto com".
     spoken = _fold(text)
-    if " arroba " not in spoken:
+    if " at " not in spoken and " arroba " not in spoken:
         return None
-    spoken = spoken.replace(" arroba ", "@").replace(" ponto ", ".")
+    spoken = (
+        spoken.replace(" at ", "@")
+        .replace(" arroba ", "@")
+        .replace(" dot ", ".")
+        .replace(" ponto ", ".")
+    )
     joined = spoken.replace(" ", "")
     return joined if re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", joined) else None
+
+
+def _numeric_date(first: str, second: str, year: str) -> str | None:
+    left, right = int(first), int(second)
+    if left > 12 and right <= 12:
+        day, month = left, right
+    elif right > 12 and left <= 12:
+        month, day = left, right
+    else:
+        month, day = left, right
+    if month < 1 or month > 12 or day < 1 or day > 31:
+        return None
+    return f"{year}-{month:02d}-{day:02d}"
 
 
 def _mock_birth(text: str, folded: str) -> tuple[str | None, int | None]:
@@ -497,17 +543,27 @@ def _mock_birth(text: str, folded: str) -> tuple[str | None, int | None]:
 
     numeric = re.search(r"(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})", text)
     if numeric:
-        day, month, year = numeric.groups()
-        return f"{year}-{int(month):02d}-{int(day):02d}", None
+        parsed = _numeric_date(*numeric.groups())
+        if parsed:
+            return parsed, None
 
-    named = re.search(r"(\d{1,2})\s+de\s+([a-z]+)\s+de\s+(\d{4})", folded)
+    named = (
+        re.search(r"([a-z]+)\s+(\d{1,2}),?\s+(\d{4})", folded)
+        or re.search(r"(\d{1,2})\s+(?:of\s+)?([a-z]+)\s+(\d{4})", folded)
+        or re.search(r"(\d{1,2})\s+de\s+([a-z]+)\s+de\s+(\d{4})", folded)
+    )
     if named:
-        day, month_name, year = named.groups()
-        month = _MONTH_NAMES.get(month_name)
+        first, second, year = named.groups()
+        if first.isdigit():
+            month = _MONTH_NAMES.get(second)
+            day = int(first)
+        else:
+            month = _MONTH_NAMES.get(first)
+            day = int(second)
         if month:
-            return f"{year}-{month:02d}-{int(day):02d}", None
+            return f"{year}-{month:02d}-{day:02d}", None
 
-    age = re.search(r"(\d{1,3})\s*anos", folded)
+    age = re.search(r"(\d{1,3})\s*(?:years?(?:\s+old)?|anos)", folded)
     return None, int(age.group(1)) if age else None
 
 
@@ -517,14 +573,15 @@ def _mock_place(text: str) -> tuple[str | None, str | None, str | None]:
         return None, None, None
 
     city = re.sub(
-        r"^(?:eu\s+)?(?:moro\s+(?:em|no|na)|sou\s+de|aqui\s+(?:em|no|na)|em)\s+",
+        r"^(?:i\s+)?(?:live\s+in|am\s+from|i'm\s+from|here\s+in|"
+        r"(?:eu\s+)?(?:moro\s+(?:em|no|na)|sou\s+de|aqui\s+(?:em|no|na)|em))\s+",
         "",
         parts[0],
         flags=re.IGNORECASE,
     ).strip()
 
     state = parts[1] if len(parts) > 1 else None
-    country = "Brasil"
+    country = "Brazil"
     if len(parts) > 2:
         country = _COUNTRIES.get(_fold(parts[2]), parts[2])
     elif state and _fold(state) in _COUNTRIES:
@@ -535,25 +592,32 @@ def _mock_place(text: str) -> tuple[str | None, str | None, str | None]:
 
 
 def _mock_marital(folded: str) -> str | None:
-    if re.search(r"viuv|perdi (minha|meu) (esposa|marido|mulher)", folded):
-        return "viuvo"
-    if re.search(r"divorci|separ|desquit", folded):
-        return "divorciado"
-    if re.search(r"uniao estavel|moro junto|amasiad|vivo com", folded):
-        return "uniao"
-    if "solteir" in folded:
-        return "solteiro"
-    if "casad" in folded or re.search(r"\bcasei\b", folded):
-        return "casado"
+    if re.search(
+        r"widow|widower|viuv|lost (my|minha|meu) (wife|husband|esposa|marido|mulher)",
+        folded,
+    ):
+        return "widowed"
+    if re.search(r"divorced|divorci|separat|separ|desquit", folded):
+        return "divorced"
+    if re.search(
+        r"partnership|civil union|live together|uniao estavel|moro junto|"
+        r"amasiad|vivo com",
+        folded,
+    ):
+        return "partnership"
+    if "single" in folded or "solteir" in folded or "never married" in folded:
+        return "single"
+    if "married" in folded or "casad" in folded or re.search(r"\bcasei\b", folded):
+        return "married"
     return None
 
 
 def _mock_children(folded: str) -> tuple[bool | None, int | None]:
-    if re.search(r"adult|maior de idade|ja sao grandes|ja e grande", folded):
+    if re.search(r"grown|adult|maior de idade|ja sao grandes|ja e grande", folded):
         return False, 0
-    if re.search(r"\b(nao|nenhum|nenhuma|zero)\b", folded) and not re.search(
-        r"\d", folded
-    ):
+    if re.search(
+        r"\b(no|none|not|dont|nao|nenhum|nenhuma|zero)\b", folded
+    ) and not re.search(r"\d", folded):
         return False, 0
 
     digits = re.search(r"(\d+)", folded)
@@ -569,11 +633,12 @@ def _mock_children(folded: str) -> tuple[bool | None, int | None]:
 
 
 def _mock_hobbies(text: str) -> list[str]:
-    parts = re.split(r",|\be\b|;", text, flags=re.IGNORECASE)
+    parts = re.split(r",|\band\b|\be\b|;", text, flags=re.IGNORECASE)
     hobbies: list[str] = []
     for part in parts:
         cleaned = re.sub(
-            r"^\s*(?:eu\s+)?(?:gosto|adoro|curto|amo)?\s*(?:de\s+|do\s+|da\s+)?",
+            r"^\s*(?:i\s+)?(?:like|love|enjoy|gosto|adoro|curto|amo)?"
+            r"\s*(?:to\s+|de\s+|do\s+|da\s+)?",
             "",
             part,
             flags=re.IGNORECASE,
